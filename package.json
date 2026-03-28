@@ -1,0 +1,32 @@
+{
+  "name": "team2_2026springb_cse540_supply_chain_provenance_system",
+  "version": "1.0.0",
+  "description": "This project addresses the challenges of fragmented data and manual documentation in modern supply chains. We are developing a decentralized, permissioned system using **Hyperledger Fabric** to create a secure, unified record for tracking assets throughout their lifecycle.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "mocha tests/**/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ssinha94/team2_2026SpringB_CSE540_supply_chain_provenance_system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ssinha94/team2_2026SpringB_CSE540_supply_chain_provenance_system/issues"
+  },
+  "homepage": "https://github.com/ssinha94/team2_2026SpringB_CSE540_supply_chain_provenance_system#readme",
+  "dependencies": {
+    "fabric-contract-api": "^2.5.8",
+    "fabric-shim": "^2.5.8"
+  },
+  "devDependencies": {
+    "chai": "^6.2.2",
+    "mocha": "^11.7.5"
+  }
+}
