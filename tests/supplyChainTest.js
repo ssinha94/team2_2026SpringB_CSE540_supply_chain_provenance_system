@@ -1,4 +1,5 @@
 const SupplyChain = require('../chaincode/supplyChain.js');
+const { roles } = require('../chaincode/accessControl');
 const assert = require('assert');
 
 describe('SupplyChain Smart Contract Tests', () => {
@@ -10,14 +11,26 @@ describe('SupplyChain Smart Contract Tests', () => {
         contract = new SupplyChain();
         mockStub = {
             state: {},
-            putState: async function(key, value) { this.state[key] = value; },
-            getState: async function(key) { return this.state[key] || Buffer.from(''); },
+            putState: async function(key, value) {
+                this.state[key] = value;
+            },
+            getState: async function(key) {
+                return this.state[key] || Buffer.from('');
+            },
             getTxTimestamp: () => ({ seconds: Math.floor(Date.now() / 1000) }),
-            setEvent: (name, payload) => { console.log(`Event Emitted: ${name}`); }
+            setEvent: (name, payload) => {
+                console.log(`Event Emitted: ${name}`);
+            }
         };
 
         mockContext = {
-            stub: mockStub
+            stub: mockStub,
+            clientIdentity: {
+                assertAttributeValue: (attr, value) =>
+                    value === roles.MANUFACTURER ||
+                    value === roles.DISTRIBUTOR ||
+                    value === roles.RETAILER
+            }
         };
     });
 
@@ -56,7 +69,7 @@ describe('SupplyChain Smart Contract Tests', () => {
             await contract.RegisterAsset(mockContext, 'ERR-01', 'User', 'hash');
             assert.fail('Should have thrown an unauthorized error');
         } catch (err) {
-            assert.ok(err.message.includes('unauthorized'));
+            assert.ok(err.message.includes('Unauthorized'));
         }
     });
 });

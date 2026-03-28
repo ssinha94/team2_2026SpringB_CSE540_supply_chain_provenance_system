@@ -41,5 +41,20 @@ npm install
 npm test
 ```
 
+### Linting (Code Quality)
+This project uses ESLint with strict checks (including `max-len: 120`) to enforce style and best practices.
+
+Run:
+```bash
+npm run lint
+```
+
+Auto-fix formatting issues where possible:
+```bash
+npm run lint:fix
+```
+
+If lint introduces failures, inspect changed files and update to meet ESLint rules.
+
 ---
 *This repository serves as the official record of development for CSE 540.*

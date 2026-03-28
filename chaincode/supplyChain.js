@@ -2,6 +2,7 @@
 
 const { Contract } = require('fabric-contract-api');
 const SupplyChainContext = require('./transactionContext');
+const { roles, checkRole } = require('./accessControl');
 
 class SupplyChainContract extends Contract {
 
@@ -36,6 +37,8 @@ class SupplyChainContract extends Contract {
      * This function stores the link between the physical asset and the digital record.
      */
     async RegisterAsset(ctx, assetId, owner, docHash) {
+        checkRole(ctx, roles.MANUFACTURER);
+
         const exists = await this.AssetExists(ctx, assetId);
         if (exists) {
             throw new Error(`The asset ${assetId} already exists`);
@@ -62,6 +65,12 @@ class SupplyChainContract extends Contract {
      * This creates an immutable audit trail of the product's journey.
      */
     async TransferCustody(ctx, assetId, newOwner) {
+        try {
+            checkRole(ctx, roles.DISTRIBUTOR);
+        } catch {
+            checkRole(ctx, roles.RETAILER);
+        }
+
         const assetAsBytes = await ctx.stub.getState(assetId);
         if (!assetAsBytes || assetAsBytes.length === 0) {
             throw new Error(`${assetId} does not exist`);

@@ -7,7 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha tests/**/*.js"
+    "test": "mocha tests/**/*.js",
+    "lint": "eslint '**/*.js'",
+    "lint:fix": "eslint '**/*.js' --fix"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "chai": "^6.2.2",
+    "eslint": "^10.1.0",
     "mocha": "^11.7.5"
   }
 }
