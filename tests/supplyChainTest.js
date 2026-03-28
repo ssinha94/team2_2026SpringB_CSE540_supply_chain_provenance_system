@@ -88,4 +88,25 @@ describe('SupplyChain Smart Contract Tests', () => {
             }
         }
     });
+
+    it('should fail to transfer a non-existent asset', async () => {
+        try {
+            await contract.TransferCustody(mockContext, 'NON_EXISTENT', 'Distributor_Z');
+            assert.fail('Should have thrown an error for non-existent asset');
+        } catch (err) {
+            assert.ok(err.message.includes('NON_EXISTENT does not exist'));
+        }
+    });
+
+    it('should fail when attempting to double-register the same asset ID', async () => {
+        const assetId = 'BOL-002';
+        await contract.RegisterAsset(mockContext, assetId, 'Manufacturer_Node', 'hash123');
+
+        try {
+            await contract.RegisterAsset(mockContext, assetId, 'Manufacturer_Node', 'hash123');
+            assert.fail('Should have thrown an error for duplicate asset ID');
+        } catch (err) {
+            assert.ok(err.message.includes(`The asset ${assetId} already exists`));
+        }
+    });
 });

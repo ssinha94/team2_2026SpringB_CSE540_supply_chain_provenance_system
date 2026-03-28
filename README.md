@@ -57,4 +57,35 @@ npm run lint:fix
 If lint introduces failures, inspect changed files and update to meet ESLint rules.
 
 ---
+
+## 🔄 System Flow & Trust Visualization
+
+The following diagram illustrates the interaction between supply chain participants and the smart contract, highlighting how Role-Based Access Control (RBAC) ensures only authorized parties can modify the asset state.
+
+```mermaid
+sequenceDiagram
+    participant M as Manufacturer (Org1)
+    participant BC as Hyperledger Fabric Ledger
+    participant D as Distributor (Org2)
+    participant R as Retailer (Org3)
+
+    Note over M: RegisterAsset(ID, docHash)
+    M->>BC: 1. Submit Registration (Check: Role == 'manufacturer')
+    BC-->>M: Transaction Confirmed (Asset Created)
+
+    Note over D: TransferCustody(ID, newOwner)
+    D->>BC: 2. Request Transfer (Check: Role == 'distributor')
+    BC-->>D: Status Updated: 'IN_TRANSIT'
+
+    Note over R: TransferCustody(ID, newOwner)
+    R->>BC: 3. Final Receipt (Check: Role == 'retailer')
+    BC-->>R: Status Updated: 'DELIVERED'
+
+    Note over BC: QueryAsset(ID)
+    AnyStakeholder->>BC: 4. Verify History & docHash
+    BC-->>AnyStakeholder: Returns Full Provenance Trail
+```
+
+---
+
 *This repository serves as the official record of development for CSE 540.*
