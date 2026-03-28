@@ -72,4 +72,20 @@ describe('SupplyChain Smart Contract Tests', () => {
             assert.ok(err.message.includes('Unauthorized'));
         }
     });
+
+    it('should fail if RETAILER, DISTRIBUTOR, or AUDITOR tries to register asset', async () => {
+        const invalidRoles = [roles.RETAILER, roles.DISTRIBUTOR, roles.AUDITOR];
+        for (const invalidRole of invalidRoles) {
+            mockContext.clientIdentity = {
+                assertAttributeValue: (_, value) => value === invalidRole
+            };
+
+            try {
+                await contract.RegisterAsset(mockContext, 'INVALID-ROLE', 'User', 'hash');
+                assert.fail(`Should have thrown for role ${invalidRole}`);
+            } catch (err) {
+                assert.ok(err.message.includes('Unauthorized'));
+            }
+        }
+    });
 });

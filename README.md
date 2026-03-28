@@ -41,7 +41,7 @@ npm install
 npm test
 ```
 
-### Linting (Code Quality)
+### Linting
 This project uses ESLint with strict checks (including `max-len: 120`) to enforce style and best practices.
 
 Run:
