@@ -109,4 +109,13 @@ describe('SupplyChain Smart Contract Tests', () => {
             assert.ok(err.message.includes(`The asset ${assetId} already exists`));
         }
     });
+
+    it('should throw when querying a non-existent asset', async () => {
+        try {
+            await contract.QueryAsset(mockContext, 'GHOST-000');
+            assert.fail('Should have thrown an error for non-existent asset');
+        } catch (err) {
+            assert.ok(err.message.includes('GHOST-000 does not exist'));
+        }
+    });
 });
