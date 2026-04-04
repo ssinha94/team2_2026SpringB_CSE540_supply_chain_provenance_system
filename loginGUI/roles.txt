@@ -1,0 +1,10 @@
+Adedoyin, distributor
+Joshua, manufacturer
+Nicolette, auditor
+Santoso, retailer
+Sumit, auditor
+
+M, manufacturer
+D, distributor
+R, retailer
+A, auditor
