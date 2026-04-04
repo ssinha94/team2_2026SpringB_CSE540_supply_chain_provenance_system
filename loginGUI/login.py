@@ -1,8 +1,10 @@
+import os
 from tkinter import *
 from tkinter import ttk
 
 def check_input():
-    with open("roles.txt") as f:
+    dir = os.path.dirname(__file__)
+    with open(os.path.join(dir, "roles.txt")) as f:
         roles = [line.strip().split(", ") for line in f]
 
     match = next((line for line in roles if entry.get() == line[0]), None)
