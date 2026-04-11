@@ -1,6 +1,14 @@
 import os
 from tkinter import *
 from tkinter import ttk
+import subprocess
+
+
+def submit():
+    asset_id = asset_id_entry.get()
+    doc_hash = doc_hash_entry.get()
+    subprocess.run(["node", "registerAsset.js", asset_id, doc_hash])
+    asset_window.destroy()
 
 def check_input():
     dir = os.path.dirname(__file__)
@@ -42,18 +50,88 @@ def fullGUI(showGUI, role = None):
     else:
         role_label.config(text = "")
         for b in buttons:
-            b.forget()
+            b.pack_forget()
 
-#creates an asset
+#create a new asset
 def makeAsset():
+    # opens a new small window
+    asset_window = Toplevel(root)
+    asset_window.title("New Asset")
+    asset_window.geometry("300x200")
+
+    # input fields
+    ttk.Label(asset_window, text="Asset ID:").pack(pady=5)
+    asset_id_entry = ttk.Entry(asset_window, width=30)
+    asset_id_entry.pack()
+
+    ttk.Label(asset_window, text="Document Hash:").pack(pady=5)
+    doc_hash_entry = ttk.Entry(asset_window, width=30)
+    doc_hash_entry.pack()
+
+    def submit():
+        asset_id = asset_id_entry.get()
+        doc_hash = doc_hash_entry.get()
+
+        print(f"Registering asset: {asset_id} with hash: {doc_hash}")
+        asset_window.destroy()
+
+    ttk.Button(asset_window, text="Register", command=submit).pack(pady=10)
     print("Asset made")
+
 
 #moves asset owner
 def moveAsset():
+    asset_window = Toplevel(root)
+    asset_window.title("Transfer Asset")
+    asset_window.geometry("300x250")
+
+    ttk.Label(asset_window, text="Asset ID:").pack(pady=5)
+    asset_id_entry = ttk.Entry(asset_window, width=30)
+    asset_id_entry.pack()
+
+    ttk.Label(asset_window, text="New Owner:").pack(pady=5)
+    new_owner_entry = ttk.Entry(asset_window, width=30)
+    new_owner_entry.pack()
+
+    result_label = ttk.Label(asset_window, text="")
+    result_label.pack(pady=5)
+
+    def submit():
+        asset_id = asset_id_entry.get()
+        new_owner = new_owner_entry.get()
+        result = subprocess.run(
+            ["node", "transferAsset.js", asset_id, new_owner],
+            capture_output=True, text=True
+        )
+        result_label.config(text=result.stdout)
+
+    ttk.Button(asset_window, text="Transfer", command=submit).pack(pady=10)
     print("Asset moved")
 
 #displays asset information
 def checkAsset():
+    asset_window = Toplevel(root)
+    asset_window.title("Check Asset")
+    asset_window.geometry("300x300")
+
+    # input to search by ID
+    ttk.Label(asset_window, text="Asset ID:").pack(pady=5)
+    asset_id_entry = ttk.Entry(asset_window, width=30)
+    asset_id_entry.pack()
+
+    # results will show up here
+    result_text = ttk.Label(asset_window, text="")
+    result_text.pack(pady=10)
+
+    def submit():
+        asset_id = asset_id_entry.get()
+        result = subprocess.run(
+            ["node", "queryAsset.js", asset_id],
+            capture_output=True, text=True
+        )
+        result_text.config(text=result.stdout)
+
+    ttk.Button(asset_window, text="Search", command=submit).pack()
     print("Asset checked")
 
 
