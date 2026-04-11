@@ -25,7 +25,8 @@
   "homepage": "https://github.com/ssinha94/team2_2026SpringB_CSE540_supply_chain_provenance_system#readme",
   "dependencies": {
     "fabric-contract-api": "^2.5.8",
-    "fabric-shim": "^2.5.8"
+    "fabric-shim": "^2.5.8",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "chai": "^6.2.2",
