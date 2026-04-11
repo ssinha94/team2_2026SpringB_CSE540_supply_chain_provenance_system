@@ -2,7 +2,9 @@ import os
 from tkinter import *
 from tkinter import ttk
 import subprocess
+import shutil
 
+node_path = "/opt/homebrew/bin/node"
 
 def submit():
     asset_id = asset_id_entry.get()
@@ -52,14 +54,11 @@ def fullGUI(showGUI, role = None):
         for b in buttons:
             b.pack_forget()
 
-#create a new asset
 def makeAsset():
-    # opens a new small window
     asset_window = Toplevel(root)
     asset_window.title("New Asset")
     asset_window.geometry("300x200")
 
-    # input fields
     ttk.Label(asset_window, text="Asset ID:").pack(pady=5)
     asset_id_entry = ttk.Entry(asset_window, width=30)
     asset_id_entry.pack()
@@ -68,16 +67,25 @@ def makeAsset():
     doc_hash_entry = ttk.Entry(asset_window, width=30)
     doc_hash_entry.pack()
 
+    result_label = ttk.Label(asset_window, text="")  # this was missing
+    result_label.pack(pady=5)
+
     def submit():
         asset_id = asset_id_entry.get()
         doc_hash = doc_hash_entry.get()
 
-        print(f"Registering asset: {asset_id} with hash: {doc_hash}")
-        asset_window.destroy()
+        base_dir = os.path.dirname(__file__)
+        js_file = os.path.join(base_dir, "../chaincode/registerAsset.js")
+
+        result = subprocess.run(
+            [node_path, js_file, asset_id, doc_hash],
+            capture_output=True, text=True
+        )
+        print(f"stdout: {result.stdout}")
+        print(f"stderr: {result.stderr}")
+        result_label.config(text=result.stdout)
 
     ttk.Button(asset_window, text="Register", command=submit).pack(pady=10)
-    print("Asset made")
-
 
 #moves asset owner
 def moveAsset():
@@ -99,10 +107,16 @@ def moveAsset():
     def submit():
         asset_id = asset_id_entry.get()
         new_owner = new_owner_entry.get()
+
+        base_dir = os.path.dirname(__file__)
+        js_file = os.path.join(base_dir, "../chaincode/transferAsset.js")
+
         result = subprocess.run(
-            ["node", "transferAsset.js", asset_id, new_owner],
+            [node_path, js_file, asset_id, new_owner],
             capture_output=True, text=True
         )
+        print(f"stdout: {result.stdout}")
+        print(f"stderr: {result.stderr}")
         result_label.config(text=result.stdout)
 
     ttk.Button(asset_window, text="Transfer", command=submit).pack(pady=10)
@@ -125,10 +139,19 @@ def checkAsset():
 
     def submit():
         asset_id = asset_id_entry.get()
+        
+        base_dir = os.path.dirname(__file__)
+        js_file = os.path.join(base_dir, "../chaincode/queryAsset.js")
+        
+        print(f"node_path: {node_path}")
+        print(f"js_file: {js_file}")
+        
         result = subprocess.run(
-            ["node", "queryAsset.js", asset_id],
+            [node_path, js_file, asset_id],
             capture_output=True, text=True
         )
+        print(f"stdout: {result.stdout}")
+        print(f"stderr: {result.stderr}")
         result_text.config(text=result.stdout)
 
     ttk.Button(asset_window, text="Search", command=submit).pack()
