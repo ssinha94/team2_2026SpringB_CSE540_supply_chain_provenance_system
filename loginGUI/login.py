@@ -4,7 +4,10 @@ from tkinter import ttk
 import subprocess
 import shutil
 
-node_path = "/opt/homebrew/bin/node"
+node_path = shutil.which("node") or shutil.which("nodejs")
+
+if not node_path:
+    raise FileNotFoundError("Node.js is not installed or not in PATH. Install Node.js and make sure `node` works in the terminal.")
 
 def submit():
     asset_id = asset_id_entry.get()
