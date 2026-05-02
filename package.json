@@ -8,7 +8,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha tests/**/*.js",
+    "test:backend": "mocha tests/**/*.js",
+    "test:frontend": "CI=true react-scripts test",
+    "test": "npm run test:backend && npm run test:frontend",
     "lint": "eslint '**/*.js'",
     "lint:fix": "eslint '**/*.js' --fix",
     "start": "npm run build && node server.js",
@@ -39,10 +41,14 @@
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "chai": "^6.2.2",
     "chai-http": "^4.4.0",
     "concurrently": "^8.2.0",
     "eslint": "^10.1.0",
+    "jest-localstorage-mock": "^2.4.26",
     "mocha": "^11.7.5",
     "nodemon": "^3.0.1"
   },

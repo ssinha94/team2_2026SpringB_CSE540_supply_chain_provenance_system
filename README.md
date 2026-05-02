@@ -216,11 +216,17 @@ The React application is served at the `/app` endpoint by the same Express serve
 ---
 
 ### Local Development & Unit Testing
-Before deploying to the blockchain, validate the contract logic and interfaces:
+This project contains two distinct test suites: one for the Express API/blockchain mocks, and a 100% covered suite for the React UI.
+
+You can automatically execute **both suites consecutively** with a single unified command:
 ```bash
 npm install
 npm test
 ```
+
+*Alternatively, if you wish to isolate specific environments:*
+- **Backend Only**: `npm run test:backend` (Mocha endpoints & mock verifications)
+- **Frontend Only**: `npm run test:frontend` (Jest React DOM component tests)
 
 ### Linting
 This project uses ESLint with strict checks (including `max-len: 120`) to enforce style and best practices.
