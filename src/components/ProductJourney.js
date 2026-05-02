@@ -21,7 +21,12 @@ function ProductJourney({ assetId }) {
     setJourney(null);
 
     try {
-      const response = await fetch(`/trace/${id}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/trace/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
 
       if (response.ok) {

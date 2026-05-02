@@ -1,9 +1,14 @@
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const fabricService = require('./services/fabricService');
+const { authenticateUser, hasPermission } = require('./services/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Session store (in-memory for now)
+const sessions = {};
 
 // Middleware
 app.use(express.json());
@@ -24,14 +29,122 @@ app.use((req, res, next) => {
     }
 });
 
+// Authentication middleware
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+    }
+
+    if (!sessions[token]) {
+        return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+
+    req.user = sessions[token];
+    next();
+}
+
+// Role-based access control middleware
+function authorize(...allowedRoles) {
+    return (req, res, next) => {
+        if (!allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({
+                error: 'Forbidden',
+                details: `Your role (${req.user.role}) does not have permission for this action`
+            });
+        }
+        next();
+    };
+}
+
 // Routes
+
+/**
+ * POST /login
+ * Authenticate user and return session token
+ * Body: { username: string, password: string }
+ */
+app.post('/login', (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({
+                error: 'Missing username or password'
+            });
+        }
+
+        const user = authenticateUser(username, password);
+
+        if (!user) {
+            return res.status(401).json({
+                error: 'Invalid username or password'
+            });
+        }
+
+        // Generate session token
+        const token = crypto.randomBytes(32).toString('hex');
+        sessions[token] = user;
+
+        res.json({
+            success: true,
+            token,
+            user: {
+                username: user.username,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({
+            error: 'Login failed',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * POST /logout
+ * Invalidate session token
+ */
+app.post('/logout', authenticateToken, (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader.split(' ')[1];
+        delete sessions[token];
+
+        res.json({
+            success: true,
+            message: 'Logged out successfully'
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            error: 'Logout failed',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * GET /profile
+ * Get current user profile
+ */
+app.get('/profile', authenticateToken, (req, res) => {
+    res.json({
+        success: true,
+        user: req.user
+    });
+});
 
 /**
  * POST /register
  * Register a new asset in the supply chain
  * Body: { assetId: string, owner: string, docHash: string }
  */
-app.post('/register', async (req, res) => {
+app.post('/register', authenticateToken, authorize('manufacturer', 'superuser'), async (req, res) => {
     try {
         const { assetId, owner, docHash } = req.body;
 
@@ -58,7 +171,7 @@ app.post('/register', async (req, res) => {
  * Transfer custody of an asset
  * Body: { assetId: string, newOwner: string }
  */
-app.put('/transfer', async (req, res) => {
+app.put('/transfer', authenticateToken, authorize('manufacturer', 'superuser'), async (req, res) => {
     try {
         const { assetId, newOwner } = req.body;
 
@@ -84,7 +197,7 @@ app.put('/transfer', async (req, res) => {
  * GET /asset/:id
  * Query asset details by ID
  */
-app.get('/asset/:id', async (req, res) => {
+app.get('/asset/:id', authenticateToken, authorize('manufacturer', 'distributor', 'retailer', 'auditor', 'superuser'), async (req, res) => {
     try {
         const assetId = req.params.id;
 
@@ -111,7 +224,7 @@ app.get('/asset/:id', async (req, res) => {
  * GET /trace/:id
  * Get the complete trace/history of an asset
  */
-app.get('/trace/:id', async (req, res) => {
+app.get('/trace/:id', authenticateToken, authorize('manufacturer', 'distributor', 'auditor', 'superuser'), async (req, res) => {
     try {
         const assetId = req.params.id;
 

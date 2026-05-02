@@ -15,7 +15,12 @@ function AssetQuery({ onAssetQueried }) {
     setAsset(null);
 
     try {
-      const response = await fetch(`/asset/${assetId}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/asset/${assetId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
 
       if (response.ok) {

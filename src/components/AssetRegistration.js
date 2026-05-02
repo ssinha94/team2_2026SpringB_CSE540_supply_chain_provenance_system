@@ -22,10 +22,12 @@ function AssetRegistration({ onAssetRegistered }) {
     setMessage('');
 
     try {
+      const token = localStorage.getItem('authToken');
       const response = await fetch('/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData),
       });
