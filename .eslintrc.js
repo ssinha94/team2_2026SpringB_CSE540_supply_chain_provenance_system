@@ -15,5 +15,17 @@ module.exports = {
         'semi': ['error', 'always'],
         'no-unused-vars': ['warn', { 'args': 'none', 'ignoreRestSiblings': true }],
         'no-console': 'off'
-    }
+    },
+    overrides: [
+        {
+            files: ['src/**/*.js'],
+            parserOptions: {
+                sourceType: 'module'
+            },
+            env: {
+                browser: true,
+                es2021: true
+            }
+        }
+    ]
 };

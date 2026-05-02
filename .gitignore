@@ -9,6 +9,8 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Build / Runtime Files
 bin/
 lib/
+build/
 pyvenv.cfg

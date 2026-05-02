@@ -180,6 +180,34 @@ fetch('http://localhost:3000/asset/ASSET001')
   .then(data => console.log(data));
 ```
 
+## ⚛️ React Client (UI)
+
+A modern React-based user interface integrated into the Express server.
+
+### Features
+- **Asset Registration**: Register new assets with document hashes
+- **Asset Query**: Search and view asset details
+- **Product Journey Visualization**: Track assets through Creation → Shipment → Storage → Delivery
+- **Real-time Updates**: Live connection to the Express API
+
+### Running the Application
+```bash
+# Install all dependencies
+npm install
+
+# Build the React client
+npm run build
+
+# Start the server (serves both API and React UI)
+npm start
+```
+
+### Accessing the UI
+- **API Endpoints**: `http://localhost:3000/api/*`
+- **React UI**: `http://localhost:3000/app`
+
+The React application is served at the `/app` endpoint by the same Express server that handles the API.
+
 ---
 
 ### Local Development & Unit Testing

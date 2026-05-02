@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const fabricService = require('./services/fabricService');
 
 const app = express();
@@ -7,6 +8,9 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from the React app build directory
+app.use('/app', express.static(path.join(__dirname, 'build')));
 
 // CORS middleware for frontend integration
 app.use((req, res, next) => {
@@ -149,6 +153,11 @@ app.use((err, req, res, next) => {
         error: 'Internal server error',
         details: err.message
     });
+});
+
+// Catch all handler: send back React's index.html file for /app routes
+app.get('/app/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build/index.html'));
 });
 
 // 404 handler
