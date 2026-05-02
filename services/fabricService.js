@@ -33,7 +33,7 @@ class FabricService {
         return { success: true, message: `Asset ${assetId} registered successfully` };
     }
 
-    async transferAsset(assetId, newOwner) {
+    async transferAsset(assetId, newOwner, newOwnerRole) {
         if (!this.mockLedger.has(assetId)) {
             throw new Error(`Asset ${assetId} does not exist`);
         }
@@ -41,8 +41,13 @@ class FabricService {
         const asset = this.mockLedger.get(assetId);
         const timestamp = new Date().toISOString();
         
+        // Calculate status dynamically based on new owner role
+        let newStatus = 'TRANSFERRED';
+        if (newOwnerRole === 'distributor') newStatus = 'IN_STORAGE';
+        if (newOwnerRole === 'retailer') newStatus = 'DELIVERED';
+        
         asset.Owner = newOwner;
-        asset.Status = 'TRANSFERRED';
+        asset.Status = newStatus;
         asset.Timestamp = timestamp;
         
         // Push the new state to the tracked history to mock the block trail
@@ -50,7 +55,7 @@ class FabricService {
             ID: asset.ID,
             Owner: newOwner,
             DocumentHash: asset.DocumentHash,
-            Status: 'TRANSFERRED',
+            Status: newStatus,
             Timestamp: timestamp
         });
 

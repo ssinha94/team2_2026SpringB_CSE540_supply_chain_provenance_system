@@ -52,12 +52,17 @@ function authenticateUser(username, password) {
     };
 }
 
+// Get user role without authenticating
+function getUserRole(username) {
+    return users[username] ? users[username].role : null;
+}
+
 // Role permissions
 const rolePermissions = {
-    superuser: ['register', 'query', 'journey'],
-    manufacturer: ['register', 'query', 'journey'],
-    distributor: ['query', 'journey'],
-    retailer: ['query'],
+    superuser: ['register', 'query', 'journey', 'transfer'],
+    manufacturer: ['register', 'query', 'journey', 'transfer'],
+    distributor: ['query', 'journey', 'transfer'],
+    retailer: ['query', 'transfer'],
     auditor: ['query', 'journey']
 };
 
@@ -72,5 +77,6 @@ module.exports = {
     verifyPassword,
     hashPassword,
     hasPermission,
-    rolePermissions
+    rolePermissions,
+    getUserRole
 };

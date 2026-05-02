@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AssetTransfer from './AssetTransfer';
 
 function AssetQuery({ onAssetQueried }) {
   const [assetId, setAssetId] = useState('');
@@ -6,6 +7,8 @@ function AssetQuery({ onAssetQueried }) {
   const [asset, setAsset] = useState(null);
   const [ipfsData, setIpfsData] = useState(null);
   const [error, setError] = useState('');
+  
+  const currentUsername = localStorage.getItem('username');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -109,6 +112,15 @@ function AssetQuery({ onAssetQueried }) {
                 {JSON.stringify(ipfsData.metadata ? ipfsData.metadata.data : ipfsData.data || ipfsData, null, 2)}
               </pre>
             </div>
+          )}
+
+          {asset.Owner === currentUsername && (
+            <AssetTransfer 
+              assetId={asset.ID}
+              onTransferComplete={(id, newOwner) => {
+                setAsset({ ...asset, Owner: newOwner });
+              }}
+            />
           )}
         </div>
       )}

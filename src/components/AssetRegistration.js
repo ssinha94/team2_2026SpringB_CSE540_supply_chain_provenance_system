@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 function AssetRegistration({ onAssetRegistered }) {
   const [formData, setFormData] = useState({
     assetId: '',
-    owner: '',
     documentData: ''
   });
   const [loading, setLoading] = useState(false);
@@ -51,7 +50,6 @@ function AssetRegistration({ onAssetRegistered }) {
         },
         body: JSON.stringify({
           assetId: formData.assetId,
-          owner: formData.owner,
           docHash
         }),
       });
@@ -60,7 +58,7 @@ function AssetRegistration({ onAssetRegistered }) {
 
       if (response.ok) {
         setMessage(`✅ Asset ${formData.assetId} registered successfully!`);
-        setFormData({ assetId: '', owner: '', documentData: '' });
+        setFormData({ assetId: '', documentData: '' });
         if (onAssetRegistered) {
           onAssetRegistered(formData.assetId);
         }
@@ -89,19 +87,6 @@ function AssetRegistration({ onAssetRegistered }) {
             value={formData.assetId}
             onChange={handleChange}
             placeholder="e.g., ASSET001"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="owner">Owner:</label>
-          <input
-            type="text"
-            id="owner"
-            name="owner"
-            value={formData.owner}
-            onChange={handleChange}
-            placeholder="e.g., ManufacturerA"
             required
           />
         </div>

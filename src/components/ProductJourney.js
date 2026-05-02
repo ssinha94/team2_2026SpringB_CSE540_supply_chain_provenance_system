@@ -49,52 +49,14 @@ function ProductJourney({ assetId }) {
   const getJourneySteps = () => {
     if (!journey || journey.length === 0) return [];
 
-    // For now, we'll simulate the journey steps based on the asset data
-    // In a real implementation, this would come from the blockchain history
-    const steps = [
-      {
-        title: 'Asset Created',
-        description: `Asset ${journey[0].ID} was registered in the system`,
-        owner: journey[0].Owner,
-        status: 'REGISTERED',
-        timestamp: journey[0].Timestamp,
-        completed: true
-      }
-    ];
-
-    // Add transfer steps if there are multiple entries
-    if (journey.length > 1) {
-      for (let i = 1; i < journey.length; i++) {
-        steps.push({
-          title: 'Ownership Transferred',
-          description: `Asset transferred to ${journey[i].Owner}`,
-          owner: journey[i].Owner,
-          status: journey[i].Status || 'IN_TRANSIT',
-          timestamp: journey[i].Timestamp,
-          completed: true
-        });
-      }
-    }
-
-    // Add future steps (not completed yet)
-    const futureSteps = [
-      {
-        title: 'In Storage',
-        description: 'Asset is being stored at warehouse',
-        owner: journey[journey.length - 1].Owner,
-        status: 'IN_STORAGE',
-        completed: false
-      },
-      {
-        title: 'Delivered',
-        description: 'Asset delivered to final destination',
-        owner: 'Consumer',
-        status: 'DELIVERED',
-        completed: false
-      }
-    ];
-
-    return [...steps, ...futureSteps];
+    return journey.map((item, index) => ({
+      title: index === 0 ? 'Asset Created' : 'Ownership Transferred',
+      description: index === 0 ? `Asset ${item.ID} was registered in the system` : `Asset transferred to ${item.Owner}`,
+      owner: item.Owner,
+      status: item.Status || 'UNKNOWN',
+      timestamp: item.Timestamp,
+      completed: true
+    }));
   };
 
   const journeySteps = getJourneySteps();

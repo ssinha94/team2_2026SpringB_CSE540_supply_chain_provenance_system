@@ -3,7 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const fabricService = require('./services/fabricService');
 const ipfsService = require('./services/ipfsService');
-const { authenticateUser, hasPermission } = require('./services/auth');
+const { authenticateUser, hasPermission, getUserRole } = require('./services/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -147,11 +147,12 @@ app.get('/profile', authenticateToken, (req, res) => {
  */
 app.post('/register', authenticateToken, authorize('manufacturer', 'superuser'), async (req, res) => {
     try {
-        const { assetId, owner, docHash } = req.body;
+        const { assetId, docHash } = req.body;
+        const owner = req.user.username; // Extract owner natively from securely decoded token
 
-        if (!assetId || !owner || !docHash) {
+        if (!assetId || !docHash) {
             return res.status(400).json({
-                error: 'Missing required fields: assetId, owner, docHash'
+                error: 'Missing required fields: assetId, docHash'
             });
         }
 
@@ -172,7 +173,7 @@ app.post('/register', authenticateToken, authorize('manufacturer', 'superuser'),
  * Transfer custody of an asset
  * Body: { assetId: string, newOwner: string }
  */
-app.put('/transfer', authenticateToken, authorize('manufacturer', 'superuser'), async (req, res) => {
+app.put('/transfer', authenticateToken, authorize('manufacturer', 'distributor', 'retailer', 'superuser'), async (req, res) => {
     try {
         const { assetId, newOwner } = req.body;
 
@@ -181,8 +182,25 @@ app.put('/transfer', authenticateToken, authorize('manufacturer', 'superuser'), 
                 error: 'Missing required fields: assetId, newOwner'
             });
         }
+        
+        try {
+            // Verify ownership
+            const assetQuery = await fabricService.queryAsset(assetId);
+            if (assetQuery.asset.Owner !== req.user.username) {
+                return res.status(403).json({
+                    error: 'Forbidden',
+                    details: 'You can only transfer ownership of assets that you currently own.'
+                });
+            }
+        } catch (queryError) {
+            return res.status(404).json({
+                error: 'Asset not found or failed to query during ownership check',
+                details: queryError.message
+            });
+        }
 
-        const result = await fabricService.transferAsset(assetId, newOwner);
+        const newOwnerRole = getUserRole(newOwner);
+        const result = await fabricService.transferAsset(assetId, newOwner, newOwnerRole);
 
         res.status(200).json(result);
     } catch (error) {

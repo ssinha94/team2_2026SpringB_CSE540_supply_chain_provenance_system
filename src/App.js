@@ -71,7 +71,6 @@ function App() {
 
   const handleAssetQueried = (assetId) => {
     setSelectedAssetId(assetId);
-    setActiveTab('journey');
   };
 
   if (!isLoggedIn) {
