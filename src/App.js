@@ -84,19 +84,8 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <div className="header-left">
-          <h1>Supply Chain Provenance System</h1>
-          <p>Track and verify product journey through the supply chain</p>
-        </div>
-        <div className="header-right">
-          <div className="user-info">
-            <span className={`role-badge role-${user.role}`}>{user.role}</span>
-            <span className="username">{user.username}</span>
-          </div>
-          <button className="logout-button" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
+        <h1>Supply Chain Provenance System</h1>
+        <p>Track and verify product journey through the supply chain</p>
       </header>
 
       <nav className="App-nav">
@@ -137,6 +126,16 @@ function App() {
           <ProductJourney assetId={selectedAssetId} />
         )}
       </main>
+
+      <footer className="App-footer">
+        <div className="user-info">
+          <span className={`role-badge role-${user.role}`}>{user.role}</span>
+          <span className="username">{user.username}</span>
+        </div>
+        <button className="logout-button" onClick={handleLogout}>
+          Logout
+        </button>
+      </footer>
     </div>
   );
 }

@@ -11,26 +11,28 @@
   color: white;
   border-radius: 8px;
   margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  text-align: center;
 }
 
-.header-left h1 {
+.App-header h1 {
   margin: 0 0 10px 0;
   font-size: 2.5rem;
 }
 
-.header-left p {
+.App-header p {
   margin: 0;
   opacity: 0.8;
 }
 
-.header-right {
+.App-footer {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+  border-radius: 8px;
+  margin-top: 20px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .user-info {
@@ -94,17 +96,14 @@
 }
 
 @media (max-width: 768px) {
-  .App-header {
+  .App-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .App-footer {
     flex-direction: column;
     gap: 15px;
-  }
-
-  .header-right {
     align-items: flex-start;
-  }
-
-  .header-left h1 {
-    font-size: 1.8rem;
   }
 }
 
@@ -158,7 +157,8 @@
   color: #333;
 }
 
-.form-group input {
+.form-group input,
+.form-group textarea {
   width: 100%;
   padding: 12px;
   border: 2px solid #ddd;
@@ -167,7 +167,8 @@
   box-sizing: border-box;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: #282c34;
 }
