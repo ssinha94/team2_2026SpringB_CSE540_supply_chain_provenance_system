@@ -27,10 +27,12 @@
     "url": "https://github.com/ssinha94/team2_2026SpringB_CSE540_supply_chain_provenance_system/issues"
   },
   "dependencies": {
+    "@helia/json": "^5.1.1",
     "express": "^4.18.2",
     "fabric-contract-api": "^2.5.8",
-    "fabric-network": "^2.2.20",
     "fabric-shim": "^2.5.8",
+    "helia": "^6.1.4",
+    "multiformats": "^13.4.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",

@@ -4,7 +4,7 @@ function AssetRegistration({ onAssetRegistered }) {
   const [formData, setFormData] = useState({
     assetId: '',
     owner: '',
-    docHash: ''
+    documentData: ''
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -23,20 +23,44 @@ function AssetRegistration({ onAssetRegistered }) {
 
     try {
       const token = localStorage.getItem('authToken');
+
+      // 1. Store off-chain data in IPFS first
+      const ipfsDataPayload = { metadata: { data: formData.documentData, timestamp: new Date().toISOString() } };
+      const ipfsResponse = await fetch('/ipfs/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(ipfsDataPayload),
+      });
+      
+      const ipfsResult = await ipfsResponse.json();
+      if (!ipfsResponse.ok) {
+        throw new Error(ipfsResult.error || 'Failed to upload to IPFS');
+      }
+      
+      const docHash = ipfsResult.cid;
+
+      // 2. Register asset with the hash on the blockchain mock
       const response = await fetch('/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          assetId: formData.assetId,
+          owner: formData.owner,
+          docHash
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setMessage(`✅ Asset ${formData.assetId} registered successfully!`);
-        setFormData({ assetId: '', owner: '', docHash: '' });
+        setFormData({ assetId: '', owner: '', documentData: '' });
         if (onAssetRegistered) {
           onAssetRegistered(formData.assetId);
         }
@@ -83,14 +107,14 @@ function AssetRegistration({ onAssetRegistered }) {
         </div>
 
         <div className="form-group">
-          <label htmlFor="docHash">Document Hash:</label>
-          <input
-            type="text"
-            id="docHash"
-            name="docHash"
-            value={formData.docHash}
+          <label htmlFor="documentData">Document Metadata (Off-Chain):</label>
+          <textarea
+            id="documentData"
+            name="documentData"
+            value={formData.documentData}
             onChange={handleChange}
-            placeholder="SHA-256 hash of the document"
+            placeholder="e.g., Bill of Lading, product specifications, condition details..."
+            rows="4"
             required
           />
         </div>

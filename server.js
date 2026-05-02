@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const fabricService = require('./services/fabricService');
+const ipfsService = require('./services/ipfsService');
 const { authenticateUser, hasPermission } = require('./services/auth');
 
 const app = express();
@@ -244,6 +245,49 @@ app.get('/trace/:id', authenticateToken, authorize('manufacturer', 'distributor'
                 details: error.message
             });
         }
+    }
+});
+
+/**
+ * POST /ipfs/upload
+ * Store a document in IPFS and return the CID
+ * Body: { metadata: any }
+ */
+app.post('/ipfs/upload', authenticateToken, async (req, res) => {
+    try {
+        const { metadata } = req.body;
+        if (!metadata) {
+            return res.status(400).json({ error: 'Missing metadata payload' });
+        }
+        
+        const cid = await ipfsService.uploadDocument(metadata);
+        
+        res.status(201).json({ success: true, cid });
+    } catch (error) {
+        console.error('IPFS upload error:', error);
+        res.status(500).json({
+            error: 'Failed to upload document to IPFS',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * GET /ipfs/:cid
+ * Retrieve document metadata from IPFS
+ */
+app.get('/ipfs/:cid', authenticateToken, async (req, res) => {
+    try {
+        const { cid } = req.params;
+        const data = await ipfsService.getDocument(cid);
+        
+        res.status(200).json({ success: true, metadata: data });
+    } catch (error) {
+        console.error('IPFS retrieve error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch document from IPFS',
+            details: error.message
+        });
     }
 });
 
