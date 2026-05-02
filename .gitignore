@@ -8,3 +8,7 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+bin/
+lib/
+pyvenv.cfg
