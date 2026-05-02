@@ -32,7 +32,155 @@ We implement RBAC to ensure only authorized nodes can modify the ledger:
 
 ---
 
-## 🚀 Execution & Usage
+## 🌐 API Layer (Express.js Server)
+
+The API layer provides RESTful endpoints that allow web applications and external systems to interact with the blockchain network.
+
+### Setup & Usage
+```bash
+# Install dependencies
+npm install
+
+# Start the API server
+npm start
+
+# Development mode with auto-restart
+npm run dev
+```
+
+### Configuration
+1. **Blockchain Connection**: Update `connection-profile.json` with your actual network configuration
+2. **User Certificates**: Add user certificates to the `wallet/` directory
+3. **Environment Variables**: Set `PORT` for server port (default: 3000)
+
+### API Endpoints
+
+#### POST /register
+Register a new asset in the supply chain.
+
+**Request Body:**
+```json
+{
+  "assetId": "string",
+  "owner": "string",
+  "docHash": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Asset ASSET_ID registered successfully"
+}
+```
+
+#### PUT /transfer
+Transfer custody of an asset to a new owner.
+
+**Request Body:**
+```json
+{
+  "assetId": "string",
+  "newOwner": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Asset ASSET_ID transferred to NEW_OWNER by USER"
+}
+```
+
+#### GET /asset/:id
+Query details of a specific asset.
+
+**Response:**
+```json
+{
+  "success": true,
+  "asset": {
+    "ID": "string",
+    "Owner": "string",
+    "DocumentHash": "string",
+    "Status": "string",
+    "Timestamp": {}
+  }
+}
+```
+
+#### GET /trace/:id
+Get the complete trace/history of an asset.
+
+**Response:**
+```json
+{
+  "success": true,
+  "history": [
+    {
+      "ID": "string",
+      "Owner": "string",
+      "DocumentHash": "string",
+      "Status": "string",
+      "Timestamp": {}
+    }
+  ]
+}
+```
+
+#### GET /health
+Health check endpoint.
+
+**Response:**
+```json
+{
+  "status": "OK",
+  "timestamp": "ISO_DATE_STRING",
+  "service": "Supply Chain API"
+}
+```
+
+### Error Responses
+All endpoints return errors in the following format:
+```json
+{
+  "error": "Error message",
+  "details": "Detailed error information"
+}
+```
+
+**Common HTTP status codes:**
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request (missing required fields)
+- `404` - Not Found (asset doesn't exist)
+- `500` - Internal Server Error
+
+### Frontend Integration
+The API server includes CORS headers to allow cross-origin requests from web applications.
+
+**Example frontend integration:**
+```javascript
+// Register an asset
+fetch('http://localhost:3000/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    assetId: 'ASSET001',
+    owner: 'ManufacturerA',
+    docHash: 'sha256_hash_of_document'
+  })
+});
+
+// Query an asset
+fetch('http://localhost:3000/asset/ASSET001')
+  .then(res => res.json())
+  .then(data => console.log(data));
+```
+
+---
 
 ### Local Development & Unit Testing
 Before deploying to the blockchain, validate the contract logic and interfaces:
