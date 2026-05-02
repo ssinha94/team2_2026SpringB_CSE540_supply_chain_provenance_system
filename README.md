@@ -60,8 +60,37 @@ npm run dev
 
 ### API Endpoints
 
+#### POST /login
+Authenticate a user and establish a session.
+
+**Request Body:**
+```json
+{
+  "username": "string",
+  "password": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "token": "RANDOM_SESSION_TOKEN",
+  "user": {
+    "username": "string",
+    "role": "string"
+  }
+}
+```
+
+#### POST /logout
+Invalidate the current session token. (Requires Authorization header)
+
+#### GET /profile
+Retrieve the current authenticated user's profile. (Requires Authorization header)
+
 #### POST /register
-Register a new asset in the supply chain.
+Register a new asset in the supply chain. (Requires Manufacturer/Superuser role)
 
 **Request Body:**
 ```json
@@ -70,7 +99,7 @@ Register a new asset in the supply chain.
   "docHash": "string"
 }
 ```
-*(Note: Initial owner identity is securely evaluated directly from your logged-in JWT session token instead of being manually submitted)*
+*(Note: Initial owner identity is securely evaluated directly from your logged-in session token instead of being manually submitted)*
 
 **Response:**
 ```json
@@ -147,6 +176,35 @@ Health check endpoint.
 }
 ```
 
+#### POST /ipfs/upload
+Upload document metadata to the embedded Helia IPFS node.
+
+**Request Body:**
+```json
+{
+  "metadata": { "any": "data" }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "cid": "IPFS_CID_STRING"
+}
+```
+
+#### GET /ipfs/:cid
+Retrieve document metadata from the embedded Helia IPFS node.
+
+**Response:**
+```json
+{
+  "success": true,
+  "metadata": { ... }
+}
+```
+
 ### Error Responses
 All endpoints return errors in the following format:
 ```json
@@ -200,15 +258,12 @@ A modern React-based user interface integrated into the Express server.
 # Install all dependencies
 npm install
 
-# Build the React client
-npm run build
-
-# Start the server (serves both API and React UI)
+# Start the server (automatically builds React client and starts Express)
 npm start
 ```
 
 ### Accessing the UI
-- **API Endpoints**: `http://localhost:3000/api/*`
+- **API Endpoints**: `http://localhost:3000/*` (e.g., `/register`, `/transfer`)
 - **React UI**: `http://localhost:3000/app`
 
 The React application is served at the `/app` endpoint by the same Express server that handles the API.
