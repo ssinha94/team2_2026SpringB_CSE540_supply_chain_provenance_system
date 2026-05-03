@@ -172,7 +172,7 @@ The React app is contained in `src/` and interacts with the Express backend via 
 - `src/` — React client components
 - `chaincode/` — Fabric contract-style chaincode files
 
-## TEST
+## Testing Implementation
 ```bash
 npm test
 ```
