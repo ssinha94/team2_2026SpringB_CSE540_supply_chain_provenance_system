@@ -172,6 +172,11 @@ The React app is contained in `src/` and interacts with the Express backend via 
 - `src/` — React client components
 - `chaincode/` — Fabric contract-style chaincode files
 
+## TEST
+```bash
+npm test
+```
+
 ## Notes
 - The ledger is currently in-memory for demonstration and grading.
 - IPFS uses an embedded Helia node and stores real CIDs.
