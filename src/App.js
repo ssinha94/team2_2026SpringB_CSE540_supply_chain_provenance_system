@@ -22,6 +22,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('query');
   const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [journeyRefresh, setJourneyRefresh] = useState(0);
 
   // Check if user is already logged in on mount
   useEffect(() => {
@@ -80,6 +81,16 @@ function App() {
 
   const handleAssetQueried = (assetId) => {
     setSelectedAssetId(assetId);
+  };
+
+  const handleStatusUpdated = (assetId, status) => {
+    setSelectedAssetId(assetId);
+    setJourneyRefresh(prev => prev + 1);
+  };
+
+  const handleTransferComplete = (assetId, newOwner) => {
+    setSelectedAssetId(assetId);
+    setJourneyRefresh(prev => prev + 1);
   };
 
   if (!isLoggedIn) {
@@ -168,13 +179,13 @@ function App() {
           <AssetQuery onAssetQueried={handleAssetQueried} />
         )}
         {canUpdateStatus && activeTab === 'status' && (
-          <AssetStatusUpdate assetId={selectedAssetId} userRole={user.role} onStatusUpdated={(id, status) => setSelectedAssetId(id)} />
+          <AssetStatusUpdate assetId={selectedAssetId} userRole={user.role} onStatusUpdated={handleStatusUpdated} />
         )}
         {canTransfer && activeTab === 'transfer' && (
-          <AssetTransfer assetId={selectedAssetId} onTransferComplete={(id, newOwner) => setSelectedAssetId(id)} />
+          <AssetTransfer assetId={selectedAssetId} onTransferComplete={handleTransferComplete} />
         )}
         {canViewJourney && activeTab === 'journey' && (
-          <ProductJourney assetId={selectedAssetId} userRole={user.role} />
+          <ProductJourney assetId={selectedAssetId} userRole={user.role} refreshKey={journeyRefresh} />
         )}
         {canVerify && activeTab === 'verify' && (
           <AssetVerification assetId={selectedAssetId} userRole={user.role} onVerificationComplete={(id) => setSelectedAssetId(id)} />

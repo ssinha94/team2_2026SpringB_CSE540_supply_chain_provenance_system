@@ -297,8 +297,27 @@ function AssetVerification({ assetId, onVerificationComplete, userRole }) {
           <h3>Ledger Integrity Check</h3>
           <p><strong>Validation Status:</strong> {integrityResult.validationStatus}</p>
           <p><strong>Hash Verified:</strong> {integrityResult.isIntegrityVerified ? 'No tampering detected since Manufacturer registration.' : 'Tampering or mismatch detected.'}</p>
+          {integrityResult.originalRegisteredHash && (
+            <p><strong>Registered Document Hash:</strong> {integrityResult.originalRegisteredHash}</p>
+          )}
+          <p><strong>Current Document Hash:</strong> {assetDetails?.DocumentHash || 'N/A'}</p>
           <p><strong>Proof Hash:</strong> {integrityResult.historyHash}</p>
           <p><strong>State Hash:</strong> {integrityResult.stateHash}</p>
+          {integrityResult.originalHashMatch === false && (
+            <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#ffebee', border: '1px solid #f44336', borderRadius: '4px' }}>
+              <strong>Original Registration Mismatch:</strong> The current document hash does not match the original registered hash from `chaincode/assets.json`.
+            </div>
+          )}
+          {integrityResult.conflicts?.length > 0 && (
+            <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#ffebee', border: '1px solid #f44336', borderRadius: '4px' }}>
+              <strong>Double-Spending Alert:</strong> Multiple transfers with conflicting owners were detected at the same timestamp.
+              <ul style={{ marginTop: '8px' }}>
+                {integrityResult.conflicts.map((conflict, index) => (
+                  <li key={index}>{conflict.reason}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {discrepancies.length > 0 && (
             <div style={{ marginTop: '10px' }}>
               <strong>Discrepancies:</strong>

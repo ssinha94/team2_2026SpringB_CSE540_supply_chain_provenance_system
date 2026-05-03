@@ -111,7 +111,9 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
       });
 
       const data = await response.json();
-      if (response.ok) {
+      if (response.status === 403) {
+        setAuditActionMessage(`❌ Unauthorized: ${data.details || data.error || 'You are not allowed to apply this status.'}`);
+      } else if (response.ok) {
         setAuditActionMessage(`✅ ${statusType} status applied successfully`);
         await fetchStatusHistory(formData.assetId);
         await fetchAuditDetails(formData.assetId);
@@ -154,7 +156,9 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
       });
 
       const data = await response.json();
-      if (response.ok) {
+      if (response.status === 403) {
+        setAuditActionMessage(`❌ Unauthorized: ${data.details || data.error || 'You are not allowed to issue a certification.'}`);
+      } else if (response.ok) {
         setAuditActionMessage('✅ Audit certification issued successfully');
         await fetchStatusHistory(formData.assetId);
         await fetchAuditDetails(formData.assetId);
@@ -193,7 +197,9 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
       });
 
       const data = await response.json();
-      if (response.ok) {
+      if (response.status === 403) {
+        setAuditActionMessage(`❌ Unauthorized: ${data.details || data.error || 'You are not allowed to flag this asset for review.'}`);
+      } else if (response.ok) {
         setAuditActionMessage('✅ Asset flagged for review and locked');
         await fetchStatusHistory(formData.assetId);
         await fetchAuditDetails(formData.assetId);
@@ -248,7 +254,9 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.status === 403) {
+        setMessage(`❌ Unauthorized: ${data.details || data.error || 'You are not allowed to update this status.'}`);
+      } else if (response.ok) {
         setMessage(`✅ Asset status updated to ${formData.status}`);
         setFormData(prev => ({
           ...prev,

@@ -3,6 +3,19 @@
 ## Overview
 This project implements a supply chain provenance system using an Express.js API, a React frontend, IPFS storage, and a mock Hyperledger Fabric ledger. The system is designed to demonstrate asset registration, ownership transfer, status tracking, verification, and certification in a decentralized supply chain workflow.
 
+## Team Members
+- **Nicolette** — auditor role and integrity verification logic
+- **Sushant** — manufacturer/distributor workflow and asset lifecycle handling
+- **Joshua** — transfer, query, and history tracing functionality
+- **Zensparx** — frontend integration and role-based UI behavior
+
+## System Design
+The design is covered throughout the documentation and codebase by:
+- the `server.js` API layer for authentication, role-based authorization, and asset operations
+- `services/fabricService.js` for mock ledger transaction logic, asset history, and auditor validation
+- `src/` frontend components for workflow-driven UI, live status updates, and audit verification
+- the `chaincode/` folder for modeled supply chain provenance contract logic and registered asset hashes
+
 ## Technologies
 - Node.js / Express.js
 - React
@@ -62,7 +75,7 @@ npm install
 npm start
 ```
 
-Server runs on `http://localhost:3000` by default.
+The application runs from `http://localhost:3000/app` by default.
 
 ## Test Accounts
 | Username | Password | Role |
@@ -72,6 +85,16 @@ Server runs on `http://localhost:3000` by default.
 | josh | abcd1234 | distributor |
 | zensparx | abcd1234 | retailer |
 | nicolette | abcd1234 | auditor |
+
+## Auditor Flow
+1. Login as the auditor using:
+   - Username: `nicolette`
+   - Password: `abcd1234`
+2. Open the **Verify Asset** tab.
+3. Enter the asset ID to inspect and click **Verify Integrity**.
+4. Confirm the returned audit validation status and compare the current document hash with the original registered hash recorded in `chaincode/assets.json`.
+5. If desired, auditors can also apply audit flags using **Mark as Audited**, **Issue Audit Certification**, or **Flag for Review**.
+6. Review the **Product Journey** tab to observe live timeline updates and any double-spending alerts when transfer conflicts are detected.
 
 ## API Endpoints
 All endpoints except `/login` and `/health` require the header:

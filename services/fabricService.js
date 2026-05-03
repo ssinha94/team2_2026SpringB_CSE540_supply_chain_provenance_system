@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 class FabricService {
     constructor() {
@@ -105,6 +107,21 @@ class FabricService {
         };
     }
 
+    async getAssetOriginalRegistrationHash(assetId) {
+        try {
+            const assetsPath = path.resolve(__dirname, '..', 'chaincode', 'assets.json');
+            if (!fs.existsSync(assetsPath)) {
+                return null;
+            }
+            const assetsFile = fs.readFileSync(assetsPath, 'utf8');
+            const registeredAssets = JSON.parse(assetsFile || '{}');
+            return registeredAssets[assetId]?.hash || null;
+        } catch (error) {
+            console.error('Failed to load original registration hash:', error);
+            return null;
+        }
+    }
+
     async getAssetHistory(assetId) {
         if (!this.mockLedger.has(assetId)) {
             throw new Error(`Asset ${assetId} does not exist`);
@@ -150,6 +167,16 @@ class FabricService {
             }
         }
 
+        const originalRegisteredHash = await this.getAssetOriginalRegistrationHash(assetId);
+        const originalHashMatch = originalRegisteredHash ? originalRegisteredHash === asset.DocumentHash : true;
+
+        if (originalRegisteredHash && !originalHashMatch) {
+            discrepancies.push({
+                index: -1,
+                reason: 'Current document hash does not match original registered hash from chaincode/assets.json'
+            });
+        }
+
         const validationStatus = discrepancies.length > 0 || conflicts.length > 0 ? 'FAILED' : 'PASSED';
 
         return {
@@ -165,6 +192,8 @@ class FabricService {
             audit: {
                 historyHash,
                 stateHash,
+                originalRegisteredHash,
+                originalHashMatch,
                 validationStatus,
                 discrepancies,
                 conflicts,

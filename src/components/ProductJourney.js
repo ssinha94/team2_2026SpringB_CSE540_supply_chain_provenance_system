@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function ProductJourney({ assetId }) {
+function ProductJourney({ assetId, refreshKey }) {
   const [journey, setJourney] = useState(null);
   const [auditInfo, setAuditInfo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -12,7 +12,7 @@ function ProductJourney({ assetId }) {
       setCurrentAssetId(assetId);
       fetchJourney(assetId);
     }
-  }, [assetId]);
+  }, [assetId, refreshKey]);
 
   const fetchJourney = async (id) => {
     if (!id) return;
@@ -101,9 +101,9 @@ function ProductJourney({ assetId }) {
           <h3>Audit Validation</h3>
           <p><strong>Validation Status:</strong> {auditInfo.validationStatus}</p>
           {auditInfo.conflicts?.length > 0 && (
-            <div>
-              <strong>Conflicts:</strong>
-              <ul>
+            <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#ffebee', border: '1px solid #f44336', borderRadius: '4px' }}>
+              <strong>Double-Spending Alert:</strong> The audit detected multiple transfers recorded at the same timestamp.
+              <ul style={{ marginTop: '8px' }}>
                 {auditInfo.conflicts.map((conflict, idx) => (
                   <li key={idx}>{conflict.reason}</li>
                 ))}
