@@ -16,4 +16,21 @@ function checkRole(ctx, requiredRole) {
     return true;
 }
 
-module.exports = { roles, checkRole };
+/**
+ * Auditors are granted read-only access to ledger queries and audit history.
+ * They may only write certification or auditor status flags.
+ */
+function checkAuditorReadAccess(ctx) {
+    const clientID = ctx.clientIdentity;
+    return clientID.assertAttributeValue('role', roles.AUDITOR);
+}
+
+function checkAuditorWriteAccess(ctx) {
+    const clientID = ctx.clientIdentity;
+    if (!clientID.assertAttributeValue('role', roles.AUDITOR)) {
+        throw new Error('Unauthorized: Client is not an auditor');
+    }
+    return true;
+}
+
+module.exports = { roles, checkRole, checkAuditorReadAccess, checkAuditorWriteAccess };

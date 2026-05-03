@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function AssetVerification({ assetId, onVerificationComplete }) {
+function AssetVerification({ assetId, onVerificationComplete, userRole }) {
   const [formData, setFormData] = useState({
     assetId: assetId || '',
     verificationNotes: '',
@@ -10,16 +10,76 @@ function AssetVerification({ assetId, onVerificationComplete }) {
   const [message, setMessage] = useState('');
   const [verificationHistory, setVerificationHistory] = useState([]);
   const [isVerified, setIsVerified] = useState(false);
+  const [assetDetails, setAssetDetails] = useState(null);
+  const [integrityResult, setIntegrityResult] = useState(null);
+  const [discrepancies, setDiscrepancies] = useState([]);
+  const [integrityLoading, setIntegrityLoading] = useState(false);
 
   useEffect(() => {
-    if (assetId && assetId !== formData.assetId) {
-      setFormData(prev => ({
-        ...prev,
-        assetId: assetId
-      }));
-      fetchVerificationHistory(assetId);
-    }
+    if (!assetId) return;
+
+    setFormData(prev => ({
+      ...prev,
+      assetId: assetId
+    }));
+
+    fetchVerificationHistory(assetId);
+    fetchAssetDetails(assetId);
   }, [assetId]);
+
+  const fetchAssetDetails = async (currentAssetId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/asset/${currentAssetId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAssetDetails(data.asset || null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch asset details:', error);
+      setAssetDetails(null);
+    }
+  };
+
+  const handleVerifyIntegrity = async () => {
+    if (!formData.assetId.trim()) {
+      setMessage('❌ Asset ID is required to verify integrity');
+      return;
+    }
+
+    setIntegrityLoading(true);
+    setMessage('');
+    setIntegrityResult(null);
+    setDiscrepancies([]);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/audit/${formData.assetId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIntegrityResult(data.audit || null);
+        setDiscrepancies(data.audit?.discrepancies || []);
+        setMessage(`✅ Integrity check ${data.audit?.isIntegrityVerified ? 'passed' : 'failed'}`);
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      setMessage(`❌ Network error: ${error.message}`);
+    } finally {
+      setIntegrityLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -149,20 +209,37 @@ function AssetVerification({ assetId, onVerificationComplete }) {
           </small>
         </div>
 
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{ 
-            background: '#FF9800', 
-            color: 'white', 
-            padding: '10px 20px', 
-            border: 'none', 
-            borderRadius: '4px', 
-            cursor: loading ? 'not-allowed' : 'pointer' 
-          }}
-        >
-          {loading ? 'Verifying...' : 'Verify Asset'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{ 
+              background: '#FF9800', 
+              color: 'white', 
+              padding: '10px 20px', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: loading ? 'not-allowed' : 'pointer' 
+            }}
+          >
+            {loading ? 'Verifying...' : 'Verify Asset'}
+          </button>
+          <button
+            type="button"
+            disabled={integrityLoading || !formData.assetId.trim()}
+            onClick={handleVerifyIntegrity}
+            style={{
+              background: '#4CAF50',
+              color: 'white',
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: integrityLoading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {integrityLoading ? 'Checking Integrity...' : 'Verify Integrity'}
+          </button>
+        </div>
       </form>
 
       {message && (
@@ -174,6 +251,48 @@ function AssetVerification({ assetId, onVerificationComplete }) {
           borderRadius: '4px'
         }}>
           {message}
+        </div>
+      )}
+
+      {assetDetails && (
+        <div style={{
+          padding: '12px',
+          marginBottom: '15px',
+          backgroundColor: '#fafafa',
+          border: '1px solid #ddd',
+          borderRadius: '5px'
+        }}>
+          <h3>Current Asset Snapshot</h3>
+          <p><strong>ID:</strong> {assetDetails.ID}</p>
+          <p><strong>Owner:</strong> {assetDetails.Owner}</p>
+          <p><strong>Status:</strong> {assetDetails.Status}</p>
+          <p><strong>Document Hash:</strong> {assetDetails.DocumentHash}</p>
+          <p><strong>Last Updated:</strong> {new Date(assetDetails.Timestamp).toLocaleString()}</p>
+        </div>
+      )}
+
+      {integrityResult && (
+        <div style={{
+          padding: '12px',
+          marginBottom: '15px',
+          backgroundColor: integrityResult.isIntegrityVerified ? '#e8f5e9' : '#ffebee',
+          border: `1px solid ${integrityResult.isIntegrityVerified ? '#4CAF50' : '#f44336'}`,
+          borderRadius: '5px'
+        }}>
+          <h3>Ledger Integrity Check</h3>
+          <p><strong>Validation Status:</strong> {integrityResult.validationStatus}</p>
+          <p><strong>Proof Hash:</strong> {integrityResult.historyHash}</p>
+          <p><strong>State Hash:</strong> {integrityResult.stateHash}</p>
+          {discrepancies.length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              <strong>Discrepancies:</strong>
+              <ul>
+                {discrepancies.map((issue, index) => (
+                  <li key={index}>{issue.reason}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

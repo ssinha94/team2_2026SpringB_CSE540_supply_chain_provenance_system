@@ -59,11 +59,11 @@ function getUserRole(username) {
 
 // Role permissions
 const rolePermissions = {
-    superuser: ['register', 'query', 'journey', 'transfer'],
-    manufacturer: ['register', 'query', 'journey', 'transfer'],
-    distributor: ['query', 'journey', 'transfer'],
-    retailer: ['query', 'transfer'],
-    auditor: ['query', 'journey']
+    superuser: ['register', 'query', 'journey', 'transfer', 'status', 'verify', 'certify'],
+    manufacturer: ['register', 'query', 'journey', 'transfer', 'status'],
+    distributor: ['query', 'transfer', 'journey', 'status', 'verify'],
+    retailer: ['query', 'transfer', 'verify'],
+    auditor: ['query', 'journey', 'status', 'verify', 'certify']
 };
 
 // Check if user has permission for an action

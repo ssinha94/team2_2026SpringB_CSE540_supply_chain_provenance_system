@@ -15,6 +15,7 @@ This project implements a supply chain provenance system using an Express.js API
 - Transfer ownership with current-owner verification
 - Update supply chain statuses for each asset
 - Verify asset authenticity with quality checks and audit history
+- Auditor integrity validation with ledger proof, discrepancy detection, and conflict flags
 - Issue certifications for regulatory or quality compliance
 - Trace full product journey via historical events
 - Enforce role-based access control for stakeholders
@@ -24,7 +25,36 @@ This project implements a supply chain provenance system using an Express.js API
 - **manufacturer**: register assets, transfer ownership, update status, query
 - **distributor**: transfer ownership, update status, verify, query
 - **retailer**: transfer ownership, verify, query
-- **auditor**: verify, certify, query, trace history
+- **auditor**: verify, certify, query, trace history, audit integrity
+
+## Supply Chain Flow
+
+```mermaid
+sequenceDiagram
+    participant M as Manufacturer (Org1)
+    participant BC as Hyperledger Fabric Ledger
+    participant D as Distributor (Org2)
+    participant R as Retailer (Org3)
+    participant A as Auditor
+
+    Note over M: RegisterAsset(ID, docHash)
+    M->>BC: 1. Submit Registration (Check: Role == 'manufacturer')
+    BC-->>M: Transaction Confirmed (Asset Created)
+
+    Note over D: TransferCustody(ID, newOwner)
+    D->>BC: 2. Request Transfer (Check: Role == 'distributor')
+    BC-->>D: Status Updated: 'IN_TRANSIT'
+
+    Note over R: TransferCustody(ID, newOwner)
+    R->>BC: 3. Final Receipt (Check: Role == 'retailer')
+    BC-->>R: Status Updated: 'DELIVERED'
+
+    Note over A: Audit Integrity & Certification
+    A->>BC: 4. Query Asset / Audit History
+    BC-->>A: Returns Full Provenance Trail + Verification Proof
+    A->>BC: 5. Apply AUDITED / CERTIFIED / FROZEN status flags
+    BC-->>A: Confirmed Auditor Oversight
+```
 
 ## Setup
 ```bash
@@ -62,11 +92,13 @@ Authorization: Bearer <token>
 
 ### Status Updates
 - `PUT /status/:id` — update asset journey status
-  - Valid statuses: `ORIGINATED`, `SHIPPED`, `RECEIVED`, `DELIVERED`, `VERIFIED`, `DAMAGED`, `LOST`
+  - Valid statuses: `ORIGINATED`, `SHIPPED`, `RECEIVED`, `DELIVERED`, `VERIFIED`, `DAMAGED`, `LOST`, `AUDITED`, `CERTIFIED`, `FROZEN`
+  - Auditor-only flags: `AUDITED`, `CERTIFIED`, `FROZEN`
 
 ### Verification
 - `POST /verify/:id` — verify asset authenticity and quality
 - `GET /verify/:id` — read verification history
+- `GET /api/audit/:id` — perform auditor integrity validation, retrieve history audit proof, and detect conflicts or discrepancies
 
 ### Certification
 - `POST /certifications/:id` — issue asset certification
@@ -121,6 +153,12 @@ Authorization: Bearer <token>
     "standard": "ISO-9001"
   }
 }
+```
+
+### Verify Integrity (Auditor)
+```text
+GET /api/audit/ASSET001
+Authorization: Bearer <token>
 ```
 
 ## Running the UI

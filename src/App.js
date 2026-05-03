@@ -168,16 +168,16 @@ function App() {
           <AssetQuery onAssetQueried={handleAssetQueried} />
         )}
         {canUpdateStatus && activeTab === 'status' && (
-          <AssetStatusUpdate assetId={selectedAssetId} onStatusUpdated={(id, status) => setSelectedAssetId(id)} />
+          <AssetStatusUpdate assetId={selectedAssetId} userRole={user.role} onStatusUpdated={(id, status) => setSelectedAssetId(id)} />
         )}
         {canTransfer && activeTab === 'transfer' && (
           <AssetTransfer assetId={selectedAssetId} onTransferComplete={(id, newOwner) => setSelectedAssetId(id)} />
         )}
         {canViewJourney && activeTab === 'journey' && (
-          <ProductJourney assetId={selectedAssetId} />
+          <ProductJourney assetId={selectedAssetId} userRole={user.role} />
         )}
         {canVerify && activeTab === 'verify' && (
-          <AssetVerification assetId={selectedAssetId} onVerificationComplete={(id) => setSelectedAssetId(id)} />
+          <AssetVerification assetId={selectedAssetId} userRole={user.role} onVerificationComplete={(id) => setSelectedAssetId(id)} />
         )}
         {canCertify && activeTab === 'certify' && (
           <AssetCertification assetId={selectedAssetId} userRole={user.role} onCertificationIssued={(id, certType) => setSelectedAssetId(id)} />

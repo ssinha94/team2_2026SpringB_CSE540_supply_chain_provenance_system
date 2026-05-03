@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function AssetStatusUpdate({ assetId, onStatusUpdated }) {
+function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
   const [formData, setFormData] = useState({
     assetId: assetId || '',
     status: 'ORIGINATED',
@@ -9,6 +9,8 @@ function AssetStatusUpdate({ assetId, onStatusUpdated }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [statusHistory, setStatusHistory] = useState([]);
+  const [validationInfo, setValidationInfo] = useState(null);
+  const [auditActionMessage, setAuditActionMessage] = useState('');
 
   const validStatuses = [
     'ORIGINATED',
@@ -20,14 +22,122 @@ function AssetStatusUpdate({ assetId, onStatusUpdated }) {
     'LOST'
   ];
 
+  const auditorOnlyStatuses = ['AUDITED', 'CERTIFIED', 'FROZEN'];
+  const statusOptions = userRole === 'auditor' ? [...validStatuses, ...auditorOnlyStatuses] : validStatuses;
+
   useEffect(() => {
-    if (assetId && assetId !== formData.assetId) {
-      setFormData(prev => ({
-        ...prev,
-        assetId: assetId
-      }));
+    if (!assetId) return;
+
+    setFormData(prev => ({
+      ...prev,
+      assetId: assetId
+    }));
+    fetchAuditDetails(assetId);
+    fetchStatusHistory(assetId);
+  }, [assetId, userRole]);
+
+  const fetchAuditDetails = async (assetId) => {
+    if (!assetId || userRole !== 'auditor') return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/audit/${assetId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setValidationInfo(data.audit || null);
+      } else {
+        setValidationInfo(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch audit details:', error);
+      setValidationInfo(null);
     }
-  }, [assetId]);
+  };
+
+  const handleSpecialAuditStatus = async (statusType) => {
+    if (!formData.assetId.trim()) {
+      setAuditActionMessage('❌ Asset ID is required for audit actions');
+      return;
+    }
+
+    setLoading(true);
+    setAuditActionMessage('');
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/status/${formData.assetId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: statusType,
+          details: `Auditor action applied by ${localStorage.getItem('username') || 'auditor'}`
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setAuditActionMessage(`✅ ${statusType} status applied successfully`);
+        await fetchStatusHistory(formData.assetId);
+        await fetchAuditDetails(formData.assetId);
+      } else {
+        setAuditActionMessage(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      setAuditActionMessage(`❌ Network error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleIssueCertification = async () => {
+    if (!formData.assetId.trim()) {
+      setAuditActionMessage('❌ Asset ID is required to issue certification');
+      return;
+    }
+
+    setLoading(true);
+    setAuditActionMessage('');
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/certifications/${formData.assetId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          certificationType: 'AUTHENTICITY_VERIFICATION',
+          expiryDate: null,
+          metadata: {
+            auditor: localStorage.getItem('username') || 'auditor',
+            issuedBy: 'Audit Status Update'
+          }
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setAuditActionMessage('✅ Audit certification issued successfully');
+        await fetchStatusHistory(formData.assetId);
+        await fetchAuditDetails(formData.assetId);
+      } else {
+        setAuditActionMessage(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      setAuditActionMessage(`❌ Network error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -141,7 +251,7 @@ function AssetStatusUpdate({ assetId, onStatusUpdated }) {
             onChange={handleChange}
             style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
           >
-            {validStatuses.map(s => (
+            {statusOptions.map(s => (
               <option key={s} value={s}>
                 {s}
               </option>
@@ -149,6 +259,7 @@ function AssetStatusUpdate({ assetId, onStatusUpdated }) {
           </select>
           <small style={{ color: '#666' }}>
             Typical journey: ORIGINATED → SHIPPED → RECEIVED → DELIVERED
+            {userRole === 'auditor' && ' • Auditors may apply AUDITED, CERTIFIED, or FROZEN flags.'}
           </small>
         </div>
 
@@ -181,6 +292,49 @@ function AssetStatusUpdate({ assetId, onStatusUpdated }) {
         </button>
       </form>
 
+      {userRole === 'auditor' && (
+        <div style={{ padding: '15px', marginBottom: '20px', backgroundColor: '#fff8e1', border: '1px solid #ffd54f', borderRadius: '4px' }}>
+          <h3>Auditor Oversight</h3>
+          <p style={{ marginBottom: '12px' }}>
+            Auditors can review the asset lifecycle, flag conflicts, and certify inspection events.
+          </p>
+          <button
+            type="button"
+            onClick={() => handleSpecialAuditStatus('AUDITED')}
+            style={{
+              background: '#4CAF50',
+              color: 'white',
+              padding: '10px 18px',
+              border: 'none',
+              borderRadius: '4px',
+              marginRight: '10px',
+              cursor: 'pointer'
+            }}
+          >
+            Mark as Audited
+          </button>
+          <button
+            type="button"
+            onClick={handleIssueCertification}
+            style={{
+              background: '#9C27B0',
+              color: 'white',
+              padding: '10px 18px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Issue Audit Certification
+          </button>
+          {auditActionMessage && (
+            <div style={{ marginTop: '12px', color: '#444' }}>
+              {auditActionMessage}
+            </div>
+          )}
+        </div>
+      )}
+
       {message && (
         <div style={{ 
           marginBottom: '15px', 
@@ -190,6 +344,33 @@ function AssetStatusUpdate({ assetId, onStatusUpdated }) {
           borderRadius: '4px'
         }}>
           {message}
+        </div>
+      )}
+
+      {validationInfo && (
+        <div style={{ marginTop: '20px', padding: '15px', backgroundColor: validationInfo.validationStatus === 'PASSED' ? '#e8f5e9' : '#ffebee', border: `1px solid ${validationInfo.validationStatus === 'PASSED' ? '#4CAF50' : '#f44336'}`, borderRadius: '4px' }}>
+          <h3>Validation Status</h3>
+          <p><strong>Validation:</strong> {validationInfo.validationStatus}</p>
+          {validationInfo.conflicts?.length > 0 && (
+            <div>
+              <strong>Conflicts:</strong>
+              <ul>
+                {validationInfo.conflicts.map((conflict, idx) => (
+                  <li key={idx}>{conflict.reason}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {validationInfo.discrepancies?.length > 0 && (
+            <div>
+              <strong>Discrepancies:</strong>
+              <ul>
+                {validationInfo.discrepancies.map((issue, idx) => (
+                  <li key={idx}>{issue.reason}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
@@ -211,7 +392,7 @@ function AssetStatusUpdate({ assetId, onStatusUpdated }) {
                 <strong>{event.Status || event.EventType}</strong>
                 {event.Details && <p style={{ margin: '5px 0', color: '#666' }}>{event.Details}</p>}
                 <small style={{ color: '#999' }}>
-                  {new Date(event.Timestamp).toLocaleString()}
+                  {event.Timestamp ? new Date(event.Timestamp).toLocaleString() : 'No timestamp'}
                 </small>
               </div>
             ))}

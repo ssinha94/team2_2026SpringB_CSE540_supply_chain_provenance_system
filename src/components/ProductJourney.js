@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 function ProductJourney({ assetId }) {
   const [journey, setJourney] = useState(null);
+  const [auditInfo, setAuditInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentAssetId, setCurrentAssetId] = useState(assetId);
@@ -22,7 +23,7 @@ function ProductJourney({ assetId }) {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/trace/${id}`, {
+      const response = await fetch(`/api/audit/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -30,7 +31,8 @@ function ProductJourney({ assetId }) {
       const data = await response.json();
 
       if (response.ok) {
-        setJourney(data.history || [data.asset]);
+        setJourney(data.history || []);
+        setAuditInfo(data.audit || null);
       } else {
         setError(data.error || 'Failed to fetch journey');
       }
@@ -49,9 +51,11 @@ function ProductJourney({ assetId }) {
   const getJourneySteps = () => {
     if (!journey || journey.length === 0) return [];
 
-    return journey.map((item, index) => ({
-      title: index === 0 ? 'Asset Created' : 'Ownership Transferred',
-      description: index === 0 ? `Asset ${item.ID} was registered in the system` : `Asset transferred to ${item.Owner}`,
+    const events = Array.isArray(journey) ? journey : journey.entries || [];
+
+    return events.map((item, index) => ({
+      title: item.EventType || (index === 0 ? 'Asset Created' : 'Lifecycle Event'),
+      description: item.Details || `Owner ${item.Owner || 'unknown'} updated the asset`,
       owner: item.Owner,
       status: item.Status || 'UNKNOWN',
       timestamp: item.Timestamp,
@@ -89,6 +93,33 @@ function ProductJourney({ assetId }) {
       {error && (
         <div className="error-message">
           {error}
+        </div>
+      )}
+
+      {auditInfo && (
+        <div style={{ marginBottom: '20px', padding: '14px', backgroundColor: auditInfo.validationStatus === 'PASSED' ? '#e8f5e9' : '#ffebee', border: `1px solid ${auditInfo.validationStatus === 'PASSED' ? '#4CAF50' : '#f44336'}`, borderRadius: '5px' }}>
+          <h3>Audit Validation</h3>
+          <p><strong>Validation Status:</strong> {auditInfo.validationStatus}</p>
+          {auditInfo.conflicts?.length > 0 && (
+            <div>
+              <strong>Conflicts:</strong>
+              <ul>
+                {auditInfo.conflicts.map((conflict, idx) => (
+                  <li key={idx}>{conflict.reason}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {auditInfo.discrepancies?.length > 0 && (
+            <div>
+              <strong>Discrepancies:</strong>
+              <ul>
+                {auditInfo.discrepancies.map((issue, idx) => (
+                  <li key={idx}>{issue.reason}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

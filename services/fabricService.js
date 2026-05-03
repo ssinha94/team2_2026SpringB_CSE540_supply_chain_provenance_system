@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 class FabricService {
     constructor() {
         // Since there is no actual blockchain to connect to, we use an in-memory store
@@ -24,7 +26,9 @@ class FabricService {
                 Owner: owner,
                 DocumentHash: docHash,
                 Status: 'REGISTERED',
-                Timestamp: timestamp
+                Timestamp: timestamp,
+                EventType: 'REGISTERED',
+                Details: 'Asset registered'
             }]
         };
 
@@ -56,7 +60,9 @@ class FabricService {
             Owner: newOwner,
             DocumentHash: asset.DocumentHash,
             Status: newStatus,
-            Timestamp: timestamp
+            Timestamp: timestamp,
+            EventType: 'TRANSFER',
+            Details: `Transferred to ${newOwner}`
         });
 
         return { success: true, message: `Asset ${assetId} transferred to ${newOwner}` };
@@ -107,6 +113,64 @@ class FabricService {
         const asset = this.mockLedger.get(assetId);
         
         return { success: true, history: asset.History };
+    }
+
+    async getAssetAuditDetails(assetId) {
+        if (!this.mockLedger.has(assetId)) {
+            throw new Error(`Asset ${assetId} does not exist`);
+        }
+
+        const asset = this.mockLedger.get(assetId);
+        const history = asset.History || [];
+        const historyJSON = JSON.stringify(history);
+        const historyHash = crypto.createHash('sha256').update(historyJSON).digest('hex');
+        const stateSnapshot = {
+            ID: asset.ID,
+            Owner: asset.Owner,
+            Status: asset.Status,
+            Timestamp: asset.Timestamp,
+            DocumentHash: asset.DocumentHash
+        };
+        const stateHash = crypto.createHash('sha256').update(JSON.stringify(stateSnapshot)).digest('hex');
+
+        const discrepancies = history.reduce((acc, event, index) => {
+            if (event.DocumentHash && event.DocumentHash !== asset.DocumentHash) {
+                acc.push({ index, event, reason: 'Document hash mismatch for history entry' });
+            }
+            return acc;
+        }, []);
+
+        const transferEvents = history.filter(evt => evt.EventType === 'TRANSFER');
+        const conflicts = [];
+        for (let i = 0; i < transferEvents.length - 1; i++) {
+            const current = transferEvents[i];
+            const next = transferEvents[i + 1];
+            if (current.Timestamp === next.Timestamp && current.Owner !== next.Owner) {
+                conflicts.push({ first: current, second: next, reason: 'Multiple transfers recorded at the same timestamp' });
+            }
+        }
+
+        const validationStatus = discrepancies.length > 0 || conflicts.length > 0 ? 'FAILED' : 'PASSED';
+
+        return {
+            success: true,
+            asset: {
+                ID: asset.ID,
+                Owner: asset.Owner,
+                Status: asset.Status,
+                Timestamp: asset.Timestamp,
+                DocumentHash: asset.DocumentHash
+            },
+            history,
+            audit: {
+                historyHash,
+                stateHash,
+                validationStatus,
+                discrepancies,
+                conflicts,
+                isIntegrityVerified: validationStatus === 'PASSED'
+            }
+        };
     }
 
     /**

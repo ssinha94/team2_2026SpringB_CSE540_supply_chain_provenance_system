@@ -286,6 +286,33 @@ app.get('/trace/:id', authenticateToken, authorize('manufacturer', 'distributor'
 });
 
 /**
+ * GET /api/audit/:id
+ * Perform auditor integrity validation and return asset history with conflict checks.
+ */
+app.get('/api/audit/:id', authenticateToken, authorize('manufacturer', 'distributor', 'auditor', 'superuser'), async (req, res) => {
+    try {
+        const assetId = req.params.id;
+
+        const result = await fabricService.getAssetAuditDetails(assetId);
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Audit error:', error);
+        if (error.message.includes('does not exist')) {
+            res.status(404).json({
+                error: 'Asset not found',
+                details: error.message
+            });
+        } else {
+            res.status(500).json({
+                error: 'Failed to audit asset',
+                details: error.message
+            });
+        }
+    }
+});
+
+/**
  * POST /ipfs/upload
  * Store a document in IPFS and return the CID
  * Body: { metadata: any }
@@ -334,7 +361,7 @@ app.get('/ipfs/:cid', authenticateToken, async (req, res) => {
  * Body: { status: string, details?: string }
  * Valid statuses: ORIGINATED, SHIPPED, RECEIVED, DELIVERED, VERIFIED, DAMAGED, LOST
  */
-app.put('/status/:id', authenticateToken, authorize('manufacturer', 'distributor', 'retailer', 'superuser'), async (req, res) => {
+app.put('/status/:id', authenticateToken, authorize('manufacturer', 'distributor', 'retailer', 'auditor', 'superuser'), async (req, res) => {
     try {
         const assetId = req.params.id;
         const { status, details } = req.body;
@@ -346,10 +373,26 @@ app.put('/status/:id', authenticateToken, authorize('manufacturer', 'distributor
         }
 
         // Validate status
-        const validStatuses = ['ORIGINATED', 'SHIPPED', 'RECEIVED', 'DELIVERED', 'VERIFIED', 'DAMAGED', 'LOST'];
+        const validStatuses = ['ORIGINATED', 'SHIPPED', 'RECEIVED', 'DELIVERED', 'VERIFIED', 'DAMAGED', 'LOST', 'AUDITED', 'CERTIFIED', 'FROZEN'];
+        const auditorOnlyStatuses = ['AUDITED', 'CERTIFIED', 'FROZEN'];
+
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
                 error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+            });
+        }
+
+        if (req.user.role === 'auditor' && !auditorOnlyStatuses.includes(status)) {
+            return res.status(403).json({
+                error: 'Forbidden',
+                details: 'Auditors may only apply audit/certification status flags.'
+            });
+        }
+
+        if (req.user.role !== 'auditor' && auditorOnlyStatuses.includes(status)) {
+            return res.status(403).json({
+                error: 'Forbidden',
+                details: 'Only auditors may apply audit or certification status flags.'
             });
         }
 
