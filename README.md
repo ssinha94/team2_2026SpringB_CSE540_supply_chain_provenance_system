@@ -4,10 +4,11 @@
 This project implements a supply chain provenance system using an Express.js API, a React frontend, IPFS storage, and a mock Hyperledger Fabric ledger. The system is designed to demonstrate asset registration, ownership transfer, status tracking, verification, and certification in a decentralized supply chain workflow.
 
 ## Team Members
-- **Nicolette** — auditor role and integrity verification logic
-- **Sushant** — manufacturer/distributor workflow and asset lifecycle handling
-- **Joshua** — transfer, query, and history tracing functionality
-- **Zensparx** — frontend integration and role-based UI behavior
+1. **Adedoyin Keshinro**
+2. **Joshua Sabels**
+3. **Nicolette Williams**
+4. **Santoso Ham**
+5. **Sumit Sinha**
 
 ## System Design
 The design is covered throughout the documentation and codebase by:
