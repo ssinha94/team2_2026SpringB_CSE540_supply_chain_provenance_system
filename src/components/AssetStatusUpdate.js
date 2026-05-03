@@ -11,6 +11,8 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
   const [statusHistory, setStatusHistory] = useState([]);
   const [validationInfo, setValidationInfo] = useState(null);
   const [auditActionMessage, setAuditActionMessage] = useState('');
+  const [assetDetails, setAssetDetails] = useState(null);
+  const [isUpdateDisabled, setIsUpdateDisabled] = useState(false);
 
   const validStatuses = [
     'ORIGINATED',
@@ -34,6 +36,7 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
     }));
     fetchAuditDetails(assetId);
     fetchStatusHistory(assetId);
+    fetchAssetDetails(assetId);
   }, [assetId, userRole]);
 
   const fetchAuditDetails = async (assetId) => {
@@ -56,6 +59,31 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
     } catch (error) {
       console.error('Failed to fetch audit details:', error);
       setValidationInfo(null);
+    }
+  };
+
+  const fetchAssetDetails = async (assetId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/asset/${assetId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAssetDetails(data.asset || null);
+        const blocked = ['IN_TRANSIT', 'SOLD'].includes(data.asset?.Status);
+        setIsUpdateDisabled(blocked);
+      } else {
+        setAssetDetails(null);
+        setIsUpdateDisabled(false);
+      }
+    } catch (error) {
+      console.error('Failed to fetch asset details:', error);
+      setAssetDetails(null);
+      setIsUpdateDisabled(false);
     }
   };
 
@@ -87,6 +115,7 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
         setAuditActionMessage(`✅ ${statusType} status applied successfully`);
         await fetchStatusHistory(formData.assetId);
         await fetchAuditDetails(formData.assetId);
+        await fetchAssetDetails(formData.assetId);
       } else {
         setAuditActionMessage(`❌ Error: ${data.error}`);
       }
@@ -129,6 +158,46 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
         setAuditActionMessage('✅ Audit certification issued successfully');
         await fetchStatusHistory(formData.assetId);
         await fetchAuditDetails(formData.assetId);
+        await fetchAssetDetails(formData.assetId);
+      } else {
+        setAuditActionMessage(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      setAuditActionMessage(`❌ Network error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFlagForReview = async () => {
+    if (!formData.assetId.trim()) {
+      setAuditActionMessage('❌ Asset ID is required to flag for review');
+      return;
+    }
+
+    setLoading(true);
+    setAuditActionMessage('');
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/status/${formData.assetId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'FROZEN',
+          details: `Flagged for review by ${localStorage.getItem('username') || 'auditor'}`
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setAuditActionMessage('✅ Asset flagged for review and locked');
+        await fetchStatusHistory(formData.assetId);
+        await fetchAuditDetails(formData.assetId);
+        await fetchAssetDetails(formData.assetId);
       } else {
         setAuditActionMessage(`❌ Error: ${data.error}`);
       }
@@ -152,6 +221,11 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
     
     if (!formData.assetId.trim()) {
       setMessage('❌ Asset ID is required');
+      return;
+    }
+
+    if (isUpdateDisabled) {
+      setMessage('❌ Cannot update status while asset is IN_TRANSIT or SOLD.');
       return;
     }
 
@@ -278,19 +352,26 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
 
         <button 
           type="submit" 
-          disabled={loading}
+          disabled={loading || isUpdateDisabled}
           style={{ 
             background: '#2196F3', 
             color: 'white', 
             padding: '10px 20px', 
             border: 'none', 
             borderRadius: '4px', 
-            cursor: loading ? 'not-allowed' : 'pointer' 
+            cursor: loading || isUpdateDisabled ? 'not-allowed' : 'pointer',
+            opacity: isUpdateDisabled ? 0.6 : 1
           }}
         >
           {loading ? 'Updating...' : 'Update Status'}
         </button>
       </form>
+
+      {isUpdateDisabled && (
+        <div style={{ padding: '12px', marginBottom: '20px', backgroundColor: '#fff3e0', border: '1px solid #ffb74d', borderRadius: '4px', color: '#bf360c' }}>
+          <strong>Update Disabled:</strong> This asset is currently marked as {assetDetails?.Status}. Status updates are blocked while assets are in transit or sold.
+        </div>
+      )}
 
       {userRole === 'auditor' && (
         <div style={{ padding: '15px', marginBottom: '20px', backgroundColor: '#fff8e1', border: '1px solid #ffd54f', borderRadius: '4px' }}>
@@ -326,6 +407,21 @@ function AssetStatusUpdate({ assetId, onStatusUpdated, userRole }) {
             }}
           >
             Issue Audit Certification
+          </button>
+          <button
+            type="button"
+            onClick={handleFlagForReview}
+            style={{
+              background: '#F44336',
+              color: 'white',
+              padding: '10px 18px',
+              border: 'none',
+              borderRadius: '4px',
+              marginLeft: '10px',
+              cursor: 'pointer'
+            }}
+          >
+            Flag for Review
           </button>
           {auditActionMessage && (
             <div style={{ marginTop: '12px', color: '#444' }}>

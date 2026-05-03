@@ -9,19 +9,34 @@ describe('AssetTransfer Ownership Form', () => {
   });
 
   test('dispatches correct block transaction and flushes state successfully', async () => {
+    // First call: fetch assets owned by the user on mount
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ assets: [{ ID: 'DEMO-PART-1', Status: 'ORIGINATED' }] })
+    });
+
+    // Second call: submit transfer request
     fetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true })
+    });
+
+    // Third call: refresh user's asset list after transfer
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ assets: [] })
     });
     
     const mockCompleter = jest.fn();
     render(<AssetTransfer assetId="DEMO-PART-1" onTransferComplete={mockCompleter} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/new owner/i), { target: { value: 'retailer-smith' } });
+    await waitFor(() => expect(screen.getByText(/you own 1 asset/i)).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/new owner username/i), { target: { value: 'retailer-smith' } });
     fireEvent.click(screen.getByRole('button', { name: /transfer asset/i }));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/transfer', expect.objectContaining({
+      expect(fetch).toHaveBeenNthCalledWith(2, '/transfer', expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({ assetId: 'DEMO-PART-1', newOwner: 'retailer-smith' })
       }));

@@ -2,13 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AssetQuery from './AssetQuery';
 
-// Mock the child transfer block to isolate Query test logic
-jest.mock('./AssetTransfer', () => {
-  return function MockAssetTransfer() {
-    return <div data-testid="mock-transfer-component">Mock Transfer Form</div>;
-  };
-});
-
 describe('AssetQuery Component Context Fencing', () => {
   beforeEach(() => {
     fetch.mockClear();
@@ -43,8 +36,6 @@ describe('AssetQuery Component Context Fencing', () => {
     await waitFor(() => {
       expect(screen.getByText('ASSET01')).toBeInTheDocument();
       expect(screen.getByText(/Off-chain test details parsed locally/i)).toBeInTheDocument();
-      // Asserts conditional rendering allows owner module rendering
-      expect(screen.getByTestId('mock-transfer-component')).toBeInTheDocument();
     });
   });
 

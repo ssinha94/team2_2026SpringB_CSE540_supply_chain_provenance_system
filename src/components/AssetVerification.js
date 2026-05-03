@@ -12,6 +12,7 @@ function AssetVerification({ assetId, onVerificationComplete, userRole }) {
   const [isVerified, setIsVerified] = useState(false);
   const [assetDetails, setAssetDetails] = useState(null);
   const [integrityResult, setIntegrityResult] = useState(null);
+  const [auditHistory, setAuditHistory] = useState([]);
   const [discrepancies, setDiscrepancies] = useState([]);
   const [integrityLoading, setIntegrityLoading] = useState(false);
 
@@ -25,6 +26,7 @@ function AssetVerification({ assetId, onVerificationComplete, userRole }) {
 
     fetchVerificationHistory(assetId);
     fetchAssetDetails(assetId);
+    fetchAuditHistory(assetId);
   }, [assetId]);
 
   const fetchAssetDetails = async (currentAssetId) => {
@@ -46,6 +48,33 @@ function AssetVerification({ assetId, onVerificationComplete, userRole }) {
     }
   };
 
+  const fetchAuditHistory = async (currentAssetId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/audit/${currentAssetId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setIntegrityResult(data.audit || null);
+        setAuditHistory(data.history || []);
+        setDiscrepancies(data.audit?.discrepancies || []);
+      } else {
+        setIntegrityResult(null);
+        setAuditHistory([]);
+        setDiscrepancies([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch audit history:', error);
+      setIntegrityResult(null);
+      setAuditHistory([]);
+      setDiscrepancies([]);
+    }
+  };
+
   const handleVerifyIntegrity = async () => {
     if (!formData.assetId.trim()) {
       setMessage('❌ Asset ID is required to verify integrity');
@@ -58,22 +87,8 @@ function AssetVerification({ assetId, onVerificationComplete, userRole }) {
     setDiscrepancies([]);
 
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/audit/${formData.assetId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setIntegrityResult(data.audit || null);
-        setDiscrepancies(data.audit?.discrepancies || []);
-        setMessage(`✅ Integrity check ${data.audit?.isIntegrityVerified ? 'passed' : 'failed'}`);
-      } else {
-        setMessage(`❌ Error: ${data.error}`);
-      }
+      await fetchAuditHistory(formData.assetId);
+      setMessage('✅ Integrity check completed');
     } catch (error) {
       setMessage(`❌ Network error: ${error.message}`);
     } finally {
@@ -281,6 +296,7 @@ function AssetVerification({ assetId, onVerificationComplete, userRole }) {
         }}>
           <h3>Ledger Integrity Check</h3>
           <p><strong>Validation Status:</strong> {integrityResult.validationStatus}</p>
+          <p><strong>Hash Verified:</strong> {integrityResult.isIntegrityVerified ? 'No tampering detected since Manufacturer registration.' : 'Tampering or mismatch detected.'}</p>
           <p><strong>Proof Hash:</strong> {integrityResult.historyHash}</p>
           <p><strong>State Hash:</strong> {integrityResult.stateHash}</p>
           {discrepancies.length > 0 && (
@@ -293,6 +309,25 @@ function AssetVerification({ assetId, onVerificationComplete, userRole }) {
               </ul>
             </div>
           )}
+        </div>
+      )}
+
+      {auditHistory.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <h3>Asset History Timeline</h3>
+          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+            {auditHistory.map((event, index) => (
+              <div key={index} style={{ padding: '12px', marginBottom: '10px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <strong>{event.EventType || 'EVENT'}</strong>
+                  <small style={{ color: '#999' }}>{event.Timestamp ? new Date(event.Timestamp).toLocaleString() : 'No timestamp'}</small>
+                </div>
+                <p style={{ margin: '5px 0' }}><strong>Status:</strong> {event.Status || 'N/A'}</p>
+                <p style={{ margin: '5px 0' }}><strong>Owner:</strong> {event.Owner || 'N/A'}</p>
+                {event.Details && <p style={{ margin: '5px 0', color: '#666' }}>{event.Details}</p>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

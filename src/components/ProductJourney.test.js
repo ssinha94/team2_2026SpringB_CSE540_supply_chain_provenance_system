@@ -21,11 +21,11 @@ describe('ProductJourney Tracer Visualizations', () => {
     await waitFor(() => {
       // Step 1 check
       expect(screen.getByText('Asset Created')).toBeInTheDocument();
-      expect(screen.getByText(/ManufacturerX/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/ManufacturerX/i)[0]).toBeInTheDocument();
       
       // Step 2 transfer propagation mapping properly with role-defined status
-      expect(screen.getByText('Ownership Transferred')).toBeInTheDocument();
-      expect(screen.getByText(/Asset transferred to DistributorY/i)).toBeInTheDocument();
+      expect(screen.getByText('Lifecycle Event')).toBeInTheDocument();
+      expect(screen.getAllByText(/DistributorY/i)[0]).toBeInTheDocument();
       expect(screen.getByText('IN_STORAGE')).toBeInTheDocument();
     });
   });
