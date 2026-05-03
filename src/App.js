@@ -3,20 +3,24 @@ import './App.css';
 import Login from './components/Login';
 import AssetRegistration from './components/AssetRegistration';
 import AssetQuery from './components/AssetQuery';
+import AssetTransfer from './components/AssetTransfer';
 import ProductJourney from './components/ProductJourney';
+import AssetStatusUpdate from './components/AssetStatusUpdate';
+import AssetVerification from './components/AssetVerification';
+import AssetCertification from './components/AssetCertification';
 
 const PERMISSIONS = {
-  superuser: ['register', 'query', 'journey'],
-  manufacturer: ['register', 'query', 'journey'],
-  distributor: ['query', 'journey'],
-  retailer: ['query'],
-  auditor: ['query', 'journey']
+  superuser: ['register', 'query', 'transfer', 'journey', 'status', 'verify', 'certify'],
+  manufacturer: ['register', 'query', 'transfer', 'journey', 'status'],
+  distributor: ['query', 'transfer', 'journey', 'status', 'verify'],
+  retailer: ['query', 'transfer', 'verify'],
+  auditor: ['query', 'journey', 'verify', 'certify']
 };
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('register');
+  const [activeTab, setActiveTab] = useState('query');
   const [selectedAssetId, setSelectedAssetId] = useState('');
 
   // Check if user is already logged in on mount
@@ -28,14 +32,17 @@ function App() {
     if (token && userRole && username) {
       setIsLoggedIn(true);
       setUser({ username, role: userRole });
-      setActiveTab(PERMISSIONS[userRole]?.[0] || 'register');
+      // Set initial tab based on role permissions
+      const defaultTab = PERMISSIONS[userRole]?.[0] || 'query';
+      setActiveTab(defaultTab);
     }
   }, []);
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
     setIsLoggedIn(true);
-    setActiveTab(PERMISSIONS[userData.role]?.[0] || 'register');
+    const defaultTab = PERMISSIONS[userData.role]?.[0] || 'query';
+    setActiveTab(defaultTab);
   };
 
   const handleLogout = async () => {
@@ -57,7 +64,7 @@ function App() {
     localStorage.removeItem('username');
     setIsLoggedIn(false);
     setUser(null);
-    setActiveTab('register');
+    setActiveTab('query');
   };
 
   const hasPermission = (action) => {
@@ -66,7 +73,9 @@ function App() {
 
   const handleAssetRegistered = (assetId) => {
     setSelectedAssetId(assetId);
-    setActiveTab('journey');
+    if (hasPermission('journey')) {
+      setActiveTab('journey');
+    }
   };
 
   const handleAssetQueried = (assetId) => {
@@ -79,7 +88,11 @@ function App() {
 
   const canRegister = hasPermission('register');
   const canQuery = hasPermission('query');
+  const canTransfer = hasPermission('transfer');
   const canViewJourney = hasPermission('journey');
+  const canUpdateStatus = hasPermission('status');
+  const canVerify = hasPermission('verify');
+  const canCertify = hasPermission('certify');
 
   return (
     <div className="App">
@@ -94,7 +107,7 @@ function App() {
             className={activeTab === 'register' ? 'active' : ''}
             onClick={() => setActiveTab('register')}
           >
-            Register Asset
+            📝 Register Asset
           </button>
         )}
         {canQuery && (
@@ -102,7 +115,23 @@ function App() {
             className={activeTab === 'query' ? 'active' : ''}
             onClick={() => setActiveTab('query')}
           >
-            Query Asset
+            🔍 Query Asset
+          </button>
+        )}
+        {canUpdateStatus && (
+          <button
+            className={activeTab === 'status' ? 'active' : ''}
+            onClick={() => setActiveTab('status')}
+          >
+            📊 Update Status
+          </button>
+        )}
+        {canTransfer && (
+          <button
+            className={activeTab === 'transfer' ? 'active' : ''}
+            onClick={() => setActiveTab('transfer')}
+          >
+            🔄 Transfer Asset
           </button>
         )}
         {canViewJourney && (
@@ -110,7 +139,23 @@ function App() {
             className={activeTab === 'journey' ? 'active' : ''}
             onClick={() => setActiveTab('journey')}
           >
-            Product Journey
+            🗺️ Product Journey
+          </button>
+        )}
+        {canVerify && (
+          <button
+            className={activeTab === 'verify' ? 'active' : ''}
+            onClick={() => setActiveTab('verify')}
+          >
+            ✓ Verify Asset
+          </button>
+        )}
+        {canCertify && (
+          <button
+            className={activeTab === 'certify' ? 'active' : ''}
+            onClick={() => setActiveTab('certify')}
+          >
+            🏆 Certifications
           </button>
         )}
       </nav>
@@ -119,11 +164,23 @@ function App() {
         {canRegister && activeTab === 'register' && (
           <AssetRegistration onAssetRegistered={handleAssetRegistered} />
         )}
-        {canQuery && (activeTab === 'query') && (
+        {canQuery && activeTab === 'query' && (
           <AssetQuery onAssetQueried={handleAssetQueried} />
         )}
-        {canViewJourney && (activeTab === 'journey') && (
+        {canUpdateStatus && activeTab === 'status' && (
+          <AssetStatusUpdate assetId={selectedAssetId} onStatusUpdated={(id, status) => setSelectedAssetId(id)} />
+        )}
+        {canTransfer && activeTab === 'transfer' && (
+          <AssetTransfer assetId={selectedAssetId} onTransferComplete={(id, newOwner) => setSelectedAssetId(id)} />
+        )}
+        {canViewJourney && activeTab === 'journey' && (
           <ProductJourney assetId={selectedAssetId} />
+        )}
+        {canVerify && activeTab === 'verify' && (
+          <AssetVerification assetId={selectedAssetId} onVerificationComplete={(id) => setSelectedAssetId(id)} />
+        )}
+        {canCertify && activeTab === 'certify' && (
+          <AssetCertification assetId={selectedAssetId} userRole={user.role} onCertificationIssued={(id, certType) => setSelectedAssetId(id)} />
         )}
       </main>
 

@@ -240,6 +240,25 @@ app.get('/asset/:id', authenticateToken, authorize('manufacturer', 'distributor'
 });
 
 /**
+ * GET /assets/owner
+ * Get all assets owned by the current user
+ */
+app.get('/assets/owner', authenticateToken, async (req, res) => {
+    try {
+        const username = req.user.username;
+        const result = await fabricService.getAssetsByOwner(username);
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Get assets by owner error:', error);
+        res.status(500).json({
+            error: 'Failed to retrieve user assets',
+            details: error.message
+        });
+    }
+});
+
+/**
  * GET /trace/:id
  * Get the complete trace/history of an asset
  */
@@ -306,6 +325,180 @@ app.get('/ipfs/:cid', authenticateToken, async (req, res) => {
             error: 'Failed to fetch document from IPFS',
             details: error.message
         });
+    }
+});
+
+/**
+ * PUT /status/:id
+ * Update asset status in the supply chain journey
+ * Body: { status: string, details?: string }
+ * Valid statuses: ORIGINATED, SHIPPED, RECEIVED, DELIVERED, VERIFIED, DAMAGED, LOST
+ */
+app.put('/status/:id', authenticateToken, authorize('manufacturer', 'distributor', 'retailer', 'superuser'), async (req, res) => {
+    try {
+        const assetId = req.params.id;
+        const { status, details } = req.body;
+
+        if (!status) {
+            return res.status(400).json({
+                error: 'Missing required field: status'
+            });
+        }
+
+        // Validate status
+        const validStatuses = ['ORIGINATED', 'SHIPPED', 'RECEIVED', 'DELIVERED', 'VERIFIED', 'DAMAGED', 'LOST'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+            });
+        }
+
+        const result = await fabricService.updateAssetStatus(assetId, status, details || '');
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Status update error:', error);
+        if (error.message.includes('does not exist')) {
+            res.status(404).json({
+                error: 'Asset not found',
+                details: error.message
+            });
+        } else {
+            res.status(500).json({
+                error: 'Failed to update asset status',
+                details: error.message
+            });
+        }
+    }
+});
+
+/**
+ * POST /verify/:id
+ * Verify asset authenticity and integrity
+ * Body: { verificationNotes?: string, qualityCheck?: boolean }
+ */
+app.post('/verify/:id', authenticateToken, authorize('auditor', 'retailer', 'superuser'), async (req, res) => {
+    try {
+        const assetId = req.params.id;
+        const { verificationNotes, qualityCheck } = req.body;
+        const verifier = req.user.username;
+
+        const result = await fabricService.verifyAsset(assetId, verifier, {
+            notes: verificationNotes || '',
+            qualityCheck: qualityCheck || false,
+            timestamp: new Date().toISOString()
+        });
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Verification error:', error);
+        if (error.message.includes('does not exist')) {
+            res.status(404).json({
+                error: 'Asset not found',
+                details: error.message
+            });
+        } else {
+            res.status(500).json({
+                error: 'Failed to verify asset',
+                details: error.message
+            });
+        }
+    }
+});
+
+/**
+ * GET /verify/:id
+ * Get verification history of an asset
+ */
+app.get('/verify/:id', authenticateToken, authorize('auditor', 'retailer', 'distributor', 'manufacturer', 'superuser'), async (req, res) => {
+    try {
+        const assetId = req.params.id;
+
+        const result = await fabricService.getVerificationHistory(assetId);
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Get verification error:', error);
+        if (error.message.includes('does not exist')) {
+            res.status(404).json({
+                error: 'Asset not found',
+                details: error.message
+            });
+        } else {
+            res.status(500).json({
+                error: 'Failed to retrieve verification history',
+                details: error.message
+            });
+        }
+    }
+});
+
+/**
+ * POST /certifications/:id
+ * Issue a certification for an asset
+ * Body: { certificationType: string, issuer: string, expiryDate?: string, metadata?: object }
+ */
+app.post('/certifications/:id', authenticateToken, authorize('auditor', 'superuser'), async (req, res) => {
+    try {
+        const assetId = req.params.id;
+        const { certificationType, expiryDate, metadata } = req.body;
+        const issuer = req.user.username;
+
+        if (!certificationType) {
+            return res.status(400).json({
+                error: 'Missing required field: certificationType'
+            });
+        }
+
+        const result = await fabricService.issueCertification(assetId, {
+            type: certificationType,
+            issuer,
+            issuedDate: new Date().toISOString(),
+            expiryDate: expiryDate || null,
+            metadata: metadata || {}
+        });
+
+        res.status(201).json(result);
+    } catch (error) {
+        console.error('Certification error:', error);
+        if (error.message.includes('does not exist')) {
+            res.status(404).json({
+                error: 'Asset not found',
+                details: error.message
+            });
+        } else {
+            res.status(500).json({
+                error: 'Failed to issue certification',
+                details: error.message
+            });
+        }
+    }
+});
+
+/**
+ * GET /certifications/:id
+ * Retrieve certifications for an asset
+ */
+app.get('/certifications/:id', authenticateToken, authorize('auditor', 'retailer', 'distributor', 'manufacturer', 'superuser'), async (req, res) => {
+    try {
+        const assetId = req.params.id;
+
+        const result = await fabricService.getCertifications(assetId);
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Get certifications error:', error);
+        if (error.message.includes('does not exist')) {
+            res.status(404).json({
+                error: 'Asset not found',
+                details: error.message
+            });
+        } else {
+            res.status(500).json({
+                error: 'Failed to retrieve certifications',
+                details: error.message
+            });
+        }
     }
 });
 

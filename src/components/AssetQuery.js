@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import AssetTransfer from './AssetTransfer';
 
 function AssetQuery({ onAssetQueried }) {
   const [assetId, setAssetId] = useState('');
@@ -112,15 +111,6 @@ function AssetQuery({ onAssetQueried }) {
                 {JSON.stringify(ipfsData.metadata ? ipfsData.metadata.data : ipfsData.data || ipfsData, null, 2)}
               </pre>
             </div>
-          )}
-
-          {asset.Owner === currentUsername && (
-            <AssetTransfer 
-              assetId={asset.ID}
-              onTransferComplete={(id, newOwner) => {
-                setAsset({ ...asset, Owner: newOwner });
-              }}
-            />
           )}
         </div>
       )}
